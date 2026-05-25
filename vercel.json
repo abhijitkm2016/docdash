@@ -5,7 +5,6 @@
   "outputDirectory": "frontend/dist",
   "functions": {
     "api/[...slug].js": {
-      "memory": 1024,
       "maxDuration": 60
     }
   },
