@@ -1,15 +1,15 @@
 const crypto    = require('crypto');
 const express   = require('express');
 const multer    = require('multer');
-const { parseFile }        = require('../services/fileParser');
-const { analyzeDocument }  = require('../services/claudeClient');
+const { parseFile }           = require('../services/fileParser');
+const { analyzeDocument }     = require('../services/claudeClient');
 const { buildStandaloneHtml } = require('../utils/htmlExporter');
-const sessionStore         = require('../services/sessionStore');
+const sessionStore            = require('../services/sessionStore');
 
 const router = express.Router();
 const upload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 20 * 1024 * 1024 }, // 20 MB
+  limits: { fileSize: 20 * 1024 * 1024 }, // 20 MB per file
   fileFilter: (_req, file, cb) => {
     const allowed = [
       'application/pdf',
@@ -33,19 +33,49 @@ const upload = multer({
   },
 });
 
-router.post('/', upload.single('file'), async (req, res) => {
-  if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
+// Accept up to 10 files under the field name "files"
+router.post('/', upload.array('files', 10), async (req, res) => {
+  const files = req.files || [];
+  if (!files.length) return res.status(400).json({ error: 'No file uploaded' });
+
+  // Optional user-supplied focus context from the textarea
+  const userContext = (req.body?.context || '').trim();
 
   try {
-    const parsed       = await parseFile(req.file.buffer, req.file.originalname);
-    const dashboardData = await analyzeDocument(parsed, req.file.originalname);
+    // Parse every uploaded file
+    const parsed = await Promise.all(
+      files.map(f => parseFile(f.buffer, f.originalname))
+    );
+
+    // Combine into a single text block when multiple files are present
+    let combinedText;
+    let combinedName;
+
+    if (parsed.length === 1) {
+      combinedText = parsed[0].text;
+      combinedName = files[0].originalname;
+    } else {
+      combinedText = parsed
+        .map((p, i) => `\n\n=== FILE ${i + 1}: ${files[i].originalname} ===\n\n${p.text}`)
+        .join('');
+      combinedName = files.map(f => f.originalname).join(', ');
+    }
+
+    // Use the first file's type for metadata; combined type when multiple
+    const combinedParsed = {
+      ...parsed[0],
+      text: combinedText,
+      type: parsed.length === 1 ? parsed[0].type : 'multi',
+    };
+
+    const dashboardData  = await analyzeDocument(combinedParsed, combinedName, { userContext });
     const standaloneHtml = buildStandaloneHtml(dashboardData);
 
     // Store session for Ask Your Data + Remix
     const sessionId = crypto.randomUUID();
     sessionStore.set(sessionId, {
-      parsedFile:    parsed,
-      fileName:      req.file.originalname,
+      parsedFile:    combinedParsed,
+      fileName:      combinedName,
       dashboardData,
     });
 

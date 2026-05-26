@@ -28,3 +28,5 @@ sample screenshots/
 
 # Claude Code (IDE files)
 .claude/
+
+.vercel

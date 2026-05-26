@@ -220,7 +220,7 @@ Rules:
 - Write for an executive — interpretive not descriptive`;
 
 // ── analyzeDocument ────────────────────────────────────────────────────────────
-async function analyzeDocument(parsedFile, fileName, { remixMode = false } = {}) {
+async function analyzeDocument(parsedFile, fileName, { remixMode = false, userContext = '' } = {}) {
   const contentPreview = parsedFile.text.slice(0, 12000);
 
   const remixInstruction = remixMode ? `
@@ -248,7 +248,7 @@ Do NOT produce the same dashboard twice.` : '';
 File name: ${fileName}
 File type: ${parsedFile.type}
 Current date/time (for metadata.generatedAt): ${new Date().toISOString()}
-
+${userContext ? `\nUser focus context: ${userContext}\n` : ''}
 Content:
 ${contentPreview}${remixInstruction}`,
       },
