@@ -40,12 +40,13 @@ app.use('/api/ask',     askRoute);
 app.use('/api/remix',   remixRoute);
 app.get('/api/health',  (_req, res) => res.json({ status: 'ok' }));
 
-// Tell Vercel: don't pre-parse the request body.
-// multer needs the raw multipart stream for file uploads.
+// Tell Vercel: don't pre-parse the body (multer needs raw multipart stream)
+// and don't buffer the response (required for SSE streaming to reach the client).
 module.exports = app;
 module.exports.config = {
   api: {
-    bodyParser: false,
-    sizeLimit: '50mb',
+    bodyParser:    false,
+    sizeLimit:     '50mb',
+    responseLimit: false, // disables Vercel's response buffering — critical for SSE
   },
 };

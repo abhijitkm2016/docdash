@@ -41,7 +41,10 @@ router.post('/', upload.array('files', 10), async (req, res) => {
   res.setHeader('Content-Type', 'text/event-stream');
   res.setHeader('Cache-Control', 'no-cache');
   res.setHeader('Connection', 'keep-alive');
-  res.setHeader('X-Accel-Buffering', 'no'); // disables Nginx buffering
+  res.setHeader('X-Accel-Buffering', 'no'); // disables Nginx/Vercel buffering
+  // Flush headers to the client immediately — without this Vercel holds them
+  // until the first res.write(), which may arrive too late to beat the timeout.
+  res.flushHeaders();
 
   const send = (event, data) =>
     res.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
