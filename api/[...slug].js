@@ -26,19 +26,19 @@ if (!process.env.VERCEL) {
 const express = require('express');
 const cors    = require('cors');
 
-const analyzeRoute = require('../backend/src/routes/analyze');
-const askRoute     = require('../backend/src/routes/ask');
-const remixRoute   = require('../backend/src/routes/remix');
+const askRoute   = require('../backend/src/routes/ask');
+const remixRoute = require('../backend/src/routes/remix');
 
 const app = express();
 
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 
-app.use('/api/analyze', analyzeRoute);
-app.use('/api/ask',     askRoute);
-app.use('/api/remix',   remixRoute);
-app.get('/api/health',  (_req, res) => res.json({ status: 'ok' }));
+// /api/analyze is handled by api/analyze.js (its own Vercel function with
+// a dedicated maxDuration and SSE streaming config — not this catch-all).
+app.use('/api/ask',    askRoute);
+app.use('/api/remix',  remixRoute);
+app.get('/api/health', (_req, res) => res.json({ status: 'ok' }));
 
 // Tell Vercel: don't pre-parse the body (multer needs raw multipart stream)
 // and don't buffer the response (required for SSE streaming to reach the client).

@@ -4,6 +4,9 @@
   "buildCommand": "npm run build --prefix frontend",
   "outputDirectory": "frontend/dist",
   "functions": {
+    "api/analyze.js": {
+      "maxDuration": 60
+    },
     "api/[...slug].js": {
       "maxDuration": 60
     }
