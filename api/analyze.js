@@ -18,10 +18,9 @@ const crypto   = require('crypto');
 const express  = require('express');
 const multer   = require('multer');
 
-const { parseFile }           = require('../backend/src/services/fileParser');
-const { analyzeDocument }     = require('../backend/src/services/claudeClient');
-const { buildStandaloneHtml } = require('../backend/src/utils/htmlExporter');
-const { condenseText }        = require('../backend/src/utils/condenseText');
+const { parseFile }       = require('../backend/src/services/fileParser');
+const { analyzeDocument } = require('../backend/src/services/claudeClient');
+const { condenseText }    = require('../backend/src/utils/condenseText');
 const sessionStore            = require('../backend/src/services/sessionStore');
 
 const upload = multer({
@@ -115,19 +114,18 @@ app.post('*', upload.array('files', 10), async (req, res) => {
     send('heartbeat', { status: 'analysing' });
     const heartbeat = setInterval(() => send('heartbeat', { status: 'analysing' }), 4000);
 
-    const dashboardData  = await analyzeDocument(combinedParsed, combinedName, { userContext });
-    const standaloneHtml = buildStandaloneHtml(dashboardData);
+    const html = await analyzeDocument(combinedParsed, combinedName, { userContext });
 
     // Store session BEFORE sending result so Ask Your Data is ready immediately
     const sessionId = crypto.randomUUID();
     await sessionStore.set(sessionId, {
-      parsedFile:    combinedParsed,
-      fileName:      combinedName,
-      dashboardData,
+      parsedFile: combinedParsed,
+      fileName:   combinedName,
+      html,
     });
 
     clearInterval(heartbeat);
-    send('result', { dashboardData, standaloneHtml, sessionId, truncated });
+    send('result', { html, sessionId, truncated });
     send('done', {});
     res.end();
   } catch (err) {

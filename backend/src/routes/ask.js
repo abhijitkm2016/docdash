@@ -19,7 +19,7 @@ router.post('/', async (req, res) => {
   }
 
   try {
-    const answer = await answerQuestion(session.dashboardData, question.trim());
+    const answer = await answerQuestion(session.parsedFile.text, question.trim());
     res.json({ answer });
   } catch (err) {
     console.error('Ask error:', err.message);
