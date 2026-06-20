@@ -73,13 +73,15 @@ app.post('*', upload.array('files', 10), async (req, res) => {
     return res.end();
   }
 
-  // Heartbeat every 4 s — keeps the Vercel edge connection alive while
-  // Claude is working. On Pro (maxDuration 60) this is belt-and-suspenders;
-  // on Hobby it is the only mechanism preventing a premature 504.
-  send('heartbeat', { status: 'processing' });
-  const heartbeat = setInterval(() => send('heartbeat', { status: 'processing' }), 4000);
+  // Phase 1 heartbeat — file received, about to parse.
+  // Sent before any async work so Vercel sees activity immediately.
+  send('heartbeat', { status: 'received' });
 
   const userContext = (req.body?.context || '').trim();
+
+  // Cap sent to Claude — 100 000 chars ≈ 25 000 tokens, well within the
+  // 200 K context window and covers virtually all real business documents.
+  const MAX_CHARS = 100_000;
 
   try {
     const parsed = await Promise.all(
@@ -97,11 +99,17 @@ app.post('*', upload.array('files', 10), async (req, res) => {
       combinedName = files.map(f => f.originalname).join(', ');
     }
 
+    const truncated = combinedText.length > MAX_CHARS;
     const combinedParsed = {
       ...parsed[0],
-      text: combinedText,
+      text: truncated ? combinedText.slice(0, MAX_CHARS) : combinedText,
       type: parsed.length === 1 ? parsed[0].type : 'multi',
     };
+
+    // Phase 2 heartbeat — parsing done, Claude is now working.
+    // Subsequent interval heartbeats keep the edge connection alive.
+    send('heartbeat', { status: 'analysing' });
+    const heartbeat = setInterval(() => send('heartbeat', { status: 'analysing' }), 4000);
 
     const dashboardData  = await analyzeDocument(combinedParsed, combinedName, { userContext });
     const standaloneHtml = buildStandaloneHtml(dashboardData);
@@ -115,11 +123,10 @@ app.post('*', upload.array('files', 10), async (req, res) => {
     });
 
     clearInterval(heartbeat);
-    send('result', { dashboardData, standaloneHtml, sessionId });
+    send('result', { dashboardData, standaloneHtml, sessionId, truncated });
     send('done', {});
     res.end();
   } catch (err) {
-    clearInterval(heartbeat);
     console.error('Analysis error:', JSON.stringify({
       message: err.message,
       name:    err.name,

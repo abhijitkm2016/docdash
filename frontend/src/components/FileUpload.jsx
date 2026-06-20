@@ -80,6 +80,17 @@ export default function FileUpload({ onResult, onError }) {
     files.forEach(f => formData.append('files', f));
     if (context.trim()) formData.append('context', context.trim());
 
+    let analysingStart = null; // timestamp when Claude phase begins
+    let elapsedTimer  = null;  // interval that ticks the elapsed label
+
+    function startElapsedTicker() {
+      analysingStart = Date.now();
+      elapsedTimer = setInterval(() => {
+        const s = Math.round((Date.now() - analysingStart) / 1000);
+        setProgress(`Claude is analysing… (${s}s)`);
+      }, 1000);
+    }
+
     try {
       const res = await fetch('/api/analyze', { method: 'POST', body: formData });
 
@@ -95,8 +106,6 @@ export default function FileUpload({ onResult, onError }) {
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
       let buffer = '';
-
-      setProgress('Parsing document…');
 
       while (true) {
         const { done, value } = await reader.read();
@@ -117,16 +126,25 @@ export default function FileUpload({ onResult, onError }) {
           const data      = JSON.parse(dataLine.replace('data:', '').trim());
 
           if (eventType === 'heartbeat') {
-            setProgress('Claude is analysing…');
+            if (data.status === 'received') {
+              setProgress('Parsing document…');
+            } else if (data.status === 'analysing' && !analysingStart) {
+              startElapsedTicker();
+            }
           } else if (eventType === 'result') {
+            clearInterval(elapsedTimer);
+            if (data.truncated) {
+              onError('Large document: only the first 100 000 characters were analysed.');
+            }
             onResult(data);
-            return; // stream will close; no need to read further
+            return;
           } else if (eventType === 'error') {
             throw new Error(data.message);
           }
         }
       }
     } catch (err) {
+      clearInterval(elapsedTimer);
       onError(err.message);
       setLoading(false);
     }
