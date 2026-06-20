@@ -81,8 +81,13 @@ router.post('/', upload.array('files', 10), async (req, res) => {
 
     res.json({ dashboardData, standaloneHtml, sessionId });
   } catch (err) {
-    console.error('Analysis error:', err.message, err.stack);
-    res.status(500).json({ error: err.message || 'Analysis failed', stack: err.stack });
+    console.error('Analysis error — full object:', JSON.stringify({
+      message: err.message,
+      name: err.name,
+      status: err.status,
+      stack: err.stack,
+    }, null, 2));
+    res.status(500).json({ error: err.message || 'Analysis failed', detail: err.status || null });
   }
 });
 
