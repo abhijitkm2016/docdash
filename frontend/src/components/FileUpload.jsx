@@ -93,6 +93,7 @@ export default function FileUpload({ onResult, onError }) {
       }
 
       const json = await res.json();
+      setLoading(false);
       onResult(json);
     } catch (err) {
       onError(err.message);

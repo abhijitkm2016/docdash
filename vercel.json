@@ -5,7 +5,7 @@
   "outputDirectory": "frontend/dist",
   "functions": {
     "api/[...slug].js": {
-      "maxDuration": 60
+      "maxDuration": 120
     }
   },
   "rewrites": [
