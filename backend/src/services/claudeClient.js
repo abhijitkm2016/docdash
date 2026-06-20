@@ -238,6 +238,7 @@ Do NOT produce the same dashboard twice.` : '';
 
   const message = await getClient().messages.create({
     model: 'claude-sonnet-4-5-20250929',
+    max_tokens: 8096,
     system: SYSTEM_PROMPT,
     messages: [
       {
@@ -271,6 +272,7 @@ ${contentPreview}${remixInstruction}`,
 async function answerQuestion(dashboardData, question) {
   const message = await getClient().messages.create({
     model: 'claude-sonnet-4-5-20250929',
+    max_tokens: 1024,
     system: ASK_SYSTEM,
     messages: [
       {
