@@ -7,6 +7,7 @@ function AppInner() {
   const [result,       setResult]       = useState(null);
   const [sessionId,    setSessionId]    = useState(null);
   const [error,        setError]        = useState(null);
+  const [warning,      setWarning]      = useState(null);
   const [remixing,     setRemixing]     = useState(false);
   const [remixVersion, setRemixVersion] = useState(0);
   const [animKey,      setAnimKey]      = useState(0);
@@ -24,6 +25,7 @@ function AppInner() {
     setSessionId(null);
     setRemixVersion(0);
     setError(null);
+    setWarning(null);
   }
 
   async function handleRemix() {
@@ -63,6 +65,11 @@ function AppInner() {
           remixing={remixing}
           remixVersion={remixVersion}
         />
+        {warning && (
+          <div style={styles.warningBanner} role="status">
+            ⚠ {warning}
+          </div>
+        )}
         {error && (
           <div style={styles.errorBanner} role="alert">
             <strong>Error:</strong> {error}
@@ -74,7 +81,12 @@ function AppInner() {
 
   return (
     <>
-      <FileUpload onResult={handleResult} onError={setError} />
+      <FileUpload onResult={handleResult} onError={setError} onWarning={setWarning} />
+      {warning && (
+        <div style={styles.warningBanner} role="status">
+          ⚠ {warning}
+        </div>
+      )}
       {error && (
         <div style={styles.errorBanner} role="alert">
           <strong>Error:</strong> {error}
@@ -101,6 +113,20 @@ const styles = {
     background: '#7f1d1d',
     border: '1px solid var(--alert)',
     color: '#fca5a5',
+    padding: '0.75rem 1.5rem',
+    borderRadius: '0.5rem',
+    fontSize: '0.875rem',
+    maxWidth: '90vw',
+    zIndex: 100,
+  },
+  warningBanner: {
+    position: 'fixed',
+    bottom: '1.5rem',
+    left: '50%',
+    transform: 'translateX(-50%)',
+    background: '#78350f',
+    border: '1px solid #d97706',
+    color: '#fde68a',
     padding: '0.75rem 1.5rem',
     borderRadius: '0.5rem',
     fontSize: '0.875rem',

@@ -85,25 +85,30 @@ app.post('*', upload.array('files', 10), async (req, res) => {
       files.map(f => parseFile(f.buffer, f.originalname))
     );
 
+    // Condense each file individually so Excel/CSV files get tabular stats
+    // even in a multi-file upload (type 'multi' would bypass tabular logic).
+    const condensedParsed = parsed.map(p => ({
+      ...p,
+      text: condenseText(p),
+    }));
+    const truncated = parsed.some((p, i) => condensedParsed[i].text.length < p.text.length);
+
     let combinedText, combinedName;
-    if (parsed.length === 1) {
-      combinedText = parsed[0].text;
+    if (condensedParsed.length === 1) {
+      combinedText = condensedParsed[0].text;
       combinedName = files[0].originalname;
     } else {
-      combinedText = parsed
+      combinedText = condensedParsed
         .map((p, i) => `\n\n=== FILE ${i + 1}: ${files[i].originalname} ===\n\n${p.text}`)
         .join('');
       combinedName = files.map(f => f.originalname).join(', ');
     }
 
-    const rawParsed = {
-      ...parsed[0],
+    const combinedParsed = {
+      ...condensedParsed[0],
       text: combinedText,
       type: parsed.length === 1 ? parsed[0].type : 'multi',
     };
-    const condensed  = condenseText(rawParsed);
-    const truncated  = condensed.length < combinedText.length;
-    const combinedParsed = { ...rawParsed, text: condensed };
 
     // Phase 2 heartbeat — parsing done, Claude is now working.
     // Subsequent interval heartbeats keep the edge connection alive.

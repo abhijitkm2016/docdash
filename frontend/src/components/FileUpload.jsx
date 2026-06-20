@@ -29,7 +29,7 @@ function truncateName(name, max = 42) {
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────
-export default function FileUpload({ onResult, onError }) {
+export default function FileUpload({ onResult, onError, onWarning }) {
   const [files,       setFiles]       = useState([]);   // File[]
   const [dragging,    setDragging]    = useState(false);
   const [loading,     setLoading]     = useState(false);
@@ -134,7 +134,7 @@ export default function FileUpload({ onResult, onError }) {
           } else if (eventType === 'result') {
             clearInterval(elapsedTimer);
             if (data.truncated) {
-              onError('Large document: only the first 100 000 characters were analysed.');
+              onWarning?.('Large document condensed for analysis — results reflect the full document\'s structure.');
             }
             onResult(data);
             return;
