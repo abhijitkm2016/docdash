@@ -11,7 +11,7 @@ router.post('/', async (req, res) => {
     return res.status(400).json({ error: 'sessionId and question are required' });
   }
 
-  const session = sessionStore.get(sessionId);
+  const session = await sessionStore.get(sessionId);
   if (!session) {
     return res.status(404).json({
       error: 'Session not found or expired. Please re-upload your file.',

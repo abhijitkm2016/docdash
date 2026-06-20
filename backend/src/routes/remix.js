@@ -12,7 +12,7 @@ router.post('/', async (req, res) => {
     return res.status(400).json({ error: 'sessionId is required' });
   }
 
-  const session = sessionStore.get(sessionId);
+  const session = await sessionStore.get(sessionId);
   if (!session) {
     return res.status(404).json({
       error: 'Session not found or expired. Please re-upload your file.',
@@ -28,7 +28,7 @@ router.post('/', async (req, res) => {
     const standaloneHtml = buildStandaloneHtml(dashboardData);
 
     // Update stored dashboardData so Ask Your Data uses the latest remix
-    sessionStore.set(sessionId, {
+    await sessionStore.set(sessionId, {
       ...session,
       dashboardData,
     });

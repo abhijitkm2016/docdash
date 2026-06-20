@@ -108,7 +108,7 @@ app.post('*', upload.array('files', 10), async (req, res) => {
 
     // Store session BEFORE sending result so Ask Your Data is ready immediately
     const sessionId = crypto.randomUUID();
-    sessionStore.set(sessionId, {
+    await sessionStore.set(sessionId, {
       parsedFile:    combinedParsed,
       fileName:      combinedName,
       dashboardData,
