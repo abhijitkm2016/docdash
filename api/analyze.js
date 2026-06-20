@@ -21,6 +21,7 @@ const multer   = require('multer');
 const { parseFile }           = require('../backend/src/services/fileParser');
 const { analyzeDocument }     = require('../backend/src/services/claudeClient');
 const { buildStandaloneHtml } = require('../backend/src/utils/htmlExporter');
+const { condenseText }        = require('../backend/src/utils/condenseText');
 const sessionStore            = require('../backend/src/services/sessionStore');
 
 const upload = multer({
@@ -79,10 +80,6 @@ app.post('*', upload.array('files', 10), async (req, res) => {
 
   const userContext = (req.body?.context || '').trim();
 
-  // Cap sent to Claude — 100 000 chars ≈ 25 000 tokens, well within the
-  // 200 K context window and covers virtually all real business documents.
-  const MAX_CHARS = 100_000;
-
   try {
     const parsed = await Promise.all(
       files.map(f => parseFile(f.buffer, f.originalname))
@@ -99,12 +96,14 @@ app.post('*', upload.array('files', 10), async (req, res) => {
       combinedName = files.map(f => f.originalname).join(', ');
     }
 
-    const truncated = combinedText.length > MAX_CHARS;
-    const combinedParsed = {
+    const rawParsed = {
       ...parsed[0],
-      text: truncated ? combinedText.slice(0, MAX_CHARS) : combinedText,
+      text: combinedText,
       type: parsed.length === 1 ? parsed[0].type : 'multi',
     };
+    const condensed  = condenseText(rawParsed);
+    const truncated  = condensed.length < combinedText.length;
+    const combinedParsed = { ...rawParsed, text: condensed };
 
     // Phase 2 heartbeat — parsing done, Claude is now working.
     // Subsequent interval heartbeats keep the edge connection alive.

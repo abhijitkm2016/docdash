@@ -223,9 +223,7 @@ Rules:
 
 // ── analyzeDocument ────────────────────────────────────────────────────────────
 async function analyzeDocument(parsedFile, fileName, { remixMode = false, userContext = '' } = {}) {
-  // Caller is responsible for slicing parsedFile.text to the desired cap
-  // before passing it in. We use the text as-is here.
-  const contentPreview = parsedFile.text;
+  const contentPreview = parsedFile.text; // already condensed by the caller
 
   const remixInstruction = remixMode ? `
 
