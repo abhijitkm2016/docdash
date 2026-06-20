@@ -81,10 +81,9 @@ export default function FileUpload({ onResult, onError }) {
     if (context.trim()) formData.append('context', context.trim());
 
     try {
-      setProgress('Parsing document…');
       const res = await fetch('/api/analyze', { method: 'POST', body: formData });
-      setProgress('Claude is analysing…');
 
+      // Catch Vercel/proxy error pages before they hit JSON.parse
       if (!res.ok) {
         const text = await res.text();
         let msg;
@@ -92,8 +91,41 @@ export default function FileUpload({ onResult, onError }) {
         throw new Error(msg || `Server error ${res.status}`);
       }
 
-      const json = await res.json();
-      onResult(json);
+      // Read the SSE stream
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+
+      setProgress('Parsing document…');
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const chunks = buffer.split('\n\n');
+        buffer = chunks.pop(); // keep any incomplete trailing chunk
+
+        for (const chunk of chunks) {
+          if (!chunk.trim()) continue;
+
+          const eventLine = chunk.split('\n').find(l => l.startsWith('event:'));
+          const dataLine  = chunk.split('\n').find(l => l.startsWith('data:'));
+          if (!eventLine || !dataLine) continue;
+
+          const eventType = eventLine.replace('event:', '').trim();
+          const data      = JSON.parse(dataLine.replace('data:', '').trim());
+
+          if (eventType === 'heartbeat') {
+            setProgress('Claude is analysing…');
+          } else if (eventType === 'result') {
+            onResult(data);
+            return; // stream will close; no need to read further
+          } else if (eventType === 'error') {
+            throw new Error(data.message);
+          }
+        }
+      }
     } catch (err) {
       onError(err.message);
       setLoading(false);

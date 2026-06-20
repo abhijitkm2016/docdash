@@ -36,7 +36,24 @@ const upload = multer({
 // Accept up to 10 files under the field name "files"
 router.post('/', upload.array('files', 10), async (req, res) => {
   const files = req.files || [];
-  if (!files.length) return res.status(400).json({ error: 'No file uploaded' });
+
+  // SSE headers must be set before any async work so Vercel sees activity
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+  res.setHeader('X-Accel-Buffering', 'no'); // disables Nginx buffering
+
+  const send = (event, data) =>
+    res.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
+
+  if (!files.length) {
+    send('error', { message: 'No file uploaded' });
+    return res.end();
+  }
+
+  // Immediate heartbeat so Vercel registers activity on the connection
+  send('heartbeat', { status: 'processing' });
+  const heartbeat = setInterval(() => send('heartbeat', { status: 'processing' }), 5000);
 
   // Optional user-supplied focus context from the textarea
   const userContext = (req.body?.context || '').trim();
@@ -71,7 +88,7 @@ router.post('/', upload.array('files', 10), async (req, res) => {
     const dashboardData  = await analyzeDocument(combinedParsed, combinedName, { userContext });
     const standaloneHtml = buildStandaloneHtml(dashboardData);
 
-    // Store session for Ask Your Data + Remix
+    // Store session BEFORE sending result so Ask Your Data is ready immediately
     const sessionId = crypto.randomUUID();
     sessionStore.set(sessionId, {
       parsedFile:    combinedParsed,
@@ -79,15 +96,20 @@ router.post('/', upload.array('files', 10), async (req, res) => {
       dashboardData,
     });
 
-    res.json({ dashboardData, standaloneHtml, sessionId });
+    clearInterval(heartbeat);
+    send('result', { dashboardData, standaloneHtml, sessionId });
+    send('done', {});
+    res.end();
   } catch (err) {
+    clearInterval(heartbeat);
     console.error('Analysis error — full object:', JSON.stringify({
       message: err.message,
       name: err.name,
       status: err.status,
       stack: err.stack,
     }, null, 2));
-    res.status(500).json({ error: err.message || 'Analysis failed', detail: err.status || null });
+    send('error', { message: err.message || 'Analysis failed' });
+    res.end();
   }
 });
 
