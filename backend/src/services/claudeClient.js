@@ -263,10 +263,10 @@ ${documentText}${remixInstruction}`,
 
 function parseClaudeJSON(raw) {
   const cleaned = raw
-    .trim()                           // remove outer whitespace before anchored regex
-    .replace(/^```(?:json)?\s*/i, '') // opening fence (``` or ```json)
-    .replace(/\s*```\s*$/i, '')       // closing fence
-    .trim();                          // clean up any remaining whitespace
+    .trim()                                // remove outer whitespace before anchored regex
+    .replace(/^`{1,3}(?:json)?\s*/i, '')  // opening fence (`, ``, ``` with optional json)
+    .replace(/\s*`{1,3}\s*$/i, '')        // closing fence
+    .trim();                               // clean up any remaining whitespace
 
   try {
     return JSON.parse(cleaned);
