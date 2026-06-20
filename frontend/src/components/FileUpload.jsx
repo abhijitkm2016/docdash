@@ -82,10 +82,17 @@ export default function FileUpload({ onResult, onError }) {
 
     try {
       setProgress('Parsing document…');
-      const res  = await fetch('/api/analyze', { method: 'POST', body: formData });
+      const res = await fetch('/api/analyze', { method: 'POST', body: formData });
       setProgress('Claude is analysing…');
+
+      if (!res.ok) {
+        const text = await res.text();
+        let msg;
+        try { msg = JSON.parse(text).error; } catch { msg = text; }
+        throw new Error(msg || `Server error ${res.status}`);
+      }
+
       const json = await res.json();
-      if (!res.ok) throw new Error(json.error || 'Analysis failed');
       onResult(json);
     } catch (err) {
       onError(err.message);
