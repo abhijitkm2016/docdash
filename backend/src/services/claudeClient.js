@@ -1,4 +1,5 @@
 const Anthropic = require('@anthropic-ai/sdk');
+const nodeFetch  = require('node-fetch');
 
 // Lazy client — instantiated on first call so dotenv is guaranteed to have loaded
 let _client = null;
@@ -6,7 +7,8 @@ function getClient() {
   if (!_client) {
     const key = (process.env.ANTHROPIC_API_KEY || '').trim();
     if (!key) throw new Error('ANTHROPIC_API_KEY is not set. Check backend/.env');
-    _client = new Anthropic({ apiKey: key });
+    // Use node-fetch to avoid Node.js native fetch strict header validation
+    _client = new Anthropic({ apiKey: key, fetch: nodeFetch });
   }
   return _client;
 }
@@ -221,7 +223,7 @@ Rules:
 
 // ── analyzeDocument ────────────────────────────────────────────────────────────
 async function analyzeDocument(parsedFile, fileName, { remixMode = false, userContext = '' } = {}) {
-  const contentPreview = parsedFile.text.slice(0, 12000);
+  const contentPreview = parsedFile.text.slice(0, 6000);
 
   const remixInstruction = remixMode ? `
 
@@ -237,8 +239,8 @@ This is a REMIX analysis. Generate a completely fresh perspective on this data:
 Do NOT produce the same dashboard twice.` : '';
 
   const message = await getClient().messages.create({
-    model: 'claude-sonnet-4-5-20250929',
-    max_tokens: 8096,
+    model: 'claude-sonnet-4-6',
+    max_tokens: 1024,
     system: SYSTEM_PROMPT,
     messages: [
       {
