@@ -237,8 +237,7 @@ This is a REMIX analysis. Generate a completely fresh perspective on this data:
 Do NOT produce the same dashboard twice.` : '';
 
   const message = await getClient().messages.create({
-    model: 'claude-sonnet-4-6',
-    max_tokens: 8096,
+    model: 'claude-sonnet-4-5-20250929',
     system: SYSTEM_PROMPT,
     messages: [
       {
@@ -271,8 +270,7 @@ ${contentPreview}${remixInstruction}`,
 // ── answerQuestion ─────────────────────────────────────────────────────────────
 async function answerQuestion(dashboardData, question) {
   const message = await getClient().messages.create({
-    model: 'claude-sonnet-4-6',
-    max_tokens: 1024,
+    model: 'claude-sonnet-4-5-20250929',
     system: ASK_SYSTEM,
     messages: [
       {
