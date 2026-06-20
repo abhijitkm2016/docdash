@@ -258,15 +258,23 @@ ${documentText}${remixInstruction}`,
   });
 
   const raw = message.content[0].text.trim();
-  const jsonStr = raw
-    .replace(/^```json\s*/i, '')
-    .replace(/^```\s*/i, '')
-    .replace(/```\s*$/i, '');
+  return parseClaudeJSON(raw);
+}
+
+function parseClaudeJSON(raw) {
+  const cleaned = raw
+    .trim()                           // remove outer whitespace before anchored regex
+    .replace(/^```(?:json)?\s*/i, '') // opening fence (``` or ```json)
+    .replace(/\s*```\s*$/i, '')       // closing fence
+    .trim();                          // clean up any remaining whitespace
 
   try {
-    return JSON.parse(jsonStr);
-  } catch {
-    throw new Error('Claude returned invalid JSON. Raw: ' + raw.slice(0, 400));
+    return JSON.parse(cleaned);
+  } catch (err) {
+    throw new Error(
+      'Claude returned invalid JSON after fence-stripping. ' +
+      'First 300 chars: ' + cleaned.slice(0, 300)
+    );
   }
 }
 
