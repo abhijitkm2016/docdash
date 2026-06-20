@@ -1,5 +1,6 @@
 function buildStandaloneHtml(data) {
-  const dataJson = JSON.stringify(data);
+  // Escape </script> so the injected JSON can't close the script tag early.
+  const dataJson = JSON.stringify(data).replace(/<\/script>/gi, '<\\/script>');
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -94,7 +95,7 @@ function buildStandaloneHtml(data) {
     // ── KPIs ──────────────────────────────────────────────────────────
     function renderKpis() {
       const grid = el('div', { className: 'kpi-grid' });
-      DATA.kpis.forEach(kpi => {
+      (DATA.kpis || []).forEach(kpi => {
         const trendClass = kpi.trend === 'up' ? 'trend-up' : kpi.trend === 'down' ? 'trend-down' : '';
         const trendIcon = kpi.trend === 'up' ? ' ↑' : kpi.trend === 'down' ? ' ↓' : '';
         grid.appendChild(el('div', { className: 'kpi-card' },
@@ -137,7 +138,7 @@ function buildStandaloneHtml(data) {
 
     function renderCharts() {
       const grid = el('div', { className: 'charts-grid' });
-      DATA.charts.forEach(chart => {
+      (DATA.charts || []).forEach(chart => {
         const wrap = el('div', { className: 'chart-canvas-wrap' });
         const canvas = el('canvas');
         wrap.appendChild(canvas);
@@ -182,8 +183,8 @@ function buildStandaloneHtml(data) {
     let sortDir = 1;
 
     function renderTable() {
-      const cols = DATA.tableData.columns;
-      const allRows = DATA.tableData.rows;
+      const cols = (DATA.tableData && DATA.tableData.columns) || [];
+      const allRows = (DATA.tableData && DATA.tableData.rows) || [];
 
       const filtered = allRows.filter(row => {
         if (!matchesFilter(row)) return false;
@@ -238,8 +239,8 @@ function buildStandaloneHtml(data) {
     // ── Narrative ─────────────────────────────────────────────────────
     function renderNarrative() {
       const box = el('div', { className: 'narrative' });
-      const paragraphs = DATA.narrative.split(/\\n\\n+/);
-      paragraphs.forEach(p => box.appendChild(el('p', {}, p.trim())));
+      const paragraphs = (DATA.narrative || '').split(/\\n\\n+/);
+      paragraphs.forEach(p => { if (p.trim()) box.appendChild(el('p', {}, p.trim())); });
       return box;
     }
 
@@ -261,24 +262,32 @@ function buildStandaloneHtml(data) {
         app.appendChild(bar);
       }
 
-      app.appendChild(el('p', { className: 'section-title' }, 'Executive Summary'));
-      const ul = el('ul', { className: 'summary-list' });
-      DATA.summary.forEach(s => ul.appendChild(el('li', {}, s)));
-      app.appendChild(ul);
+      if ((DATA.summary || []).length > 0) {
+        app.appendChild(el('p', { className: 'section-title' }, 'Executive Summary'));
+        const ul = el('ul', { className: 'summary-list' });
+        DATA.summary.forEach(s => ul.appendChild(el('li', {}, s)));
+        app.appendChild(ul);
+      }
 
-      app.appendChild(el('p', { className: 'section-title' }, 'Key Metrics'));
-      app.appendChild(renderKpis());
+      if ((DATA.kpis || []).length > 0) {
+        app.appendChild(el('p', { className: 'section-title' }, 'Key Metrics'));
+        app.appendChild(renderKpis());
+      }
 
-      app.appendChild(el('p', { className: 'section-title' }, 'Charts'));
-      app.appendChild(renderCharts());
+      if ((DATA.charts || []).length > 0) {
+        app.appendChild(el('p', { className: 'section-title' }, 'Charts'));
+        app.appendChild(renderCharts());
+      }
 
-      if (DATA.tableData.rows.length > 0) {
+      if (DATA.tableData && (DATA.tableData.rows || []).length > 0) {
         app.appendChild(el('p', { className: 'section-title' }, 'Data Table'));
         app.appendChild(renderTable());
       }
 
-      app.appendChild(el('p', { className: 'section-title' }, 'Analysis'));
-      app.appendChild(renderNarrative());
+      if (DATA.narrative) {
+        app.appendChild(el('p', { className: 'section-title' }, 'Analysis'));
+        app.appendChild(renderNarrative());
+      }
     }
 
     rerender();

@@ -68,6 +68,7 @@ function AppInner() {
         {warning && (
           <div style={styles.warningBanner} role="status">
             ⚠ {warning}
+            <button onClick={() => setWarning(null)} style={styles.dismissBtn} aria-label="Dismiss">✕</button>
           </div>
         )}
         {error && (
@@ -132,5 +133,19 @@ const styles = {
     fontSize: '0.875rem',
     maxWidth: '90vw',
     zIndex: 100,
+    display: 'flex',
+    alignItems: 'center',
+    gap: '0.75rem',
+  },
+  dismissBtn: {
+    background: 'none',
+    border: 'none',
+    color: '#fde68a',
+    cursor: 'pointer',
+    fontSize: '1rem',
+    lineHeight: 1,
+    padding: 0,
+    flexShrink: 0,
+    opacity: 0.7,
   },
 };

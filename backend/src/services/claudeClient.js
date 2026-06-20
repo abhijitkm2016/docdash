@@ -223,7 +223,7 @@ Rules:
 
 // ── analyzeDocument ────────────────────────────────────────────────────────────
 async function analyzeDocument(parsedFile, fileName, { remixMode = false, userContext = '' } = {}) {
-  const contentPreview = parsedFile.text; // already condensed by the caller
+  const documentText = parsedFile.text; // already condensed by the caller
 
   const remixInstruction = remixMode ? `
 
@@ -252,7 +252,7 @@ File type: ${parsedFile.type}
 Current date/time (for metadata.generatedAt): ${new Date().toISOString()}
 ${userContext ? `\nUser focus context: ${userContext}\n` : ''}
 Content:
-${contentPreview}${remixInstruction}`,
+${documentText}${remixInstruction}`,
       },
     ],
   });
