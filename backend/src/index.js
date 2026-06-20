@@ -3,7 +3,7 @@ require('dotenv').config({ path: path.resolve(__dirname, '../.env'), override: t
 
 const express    = require('express');
 const cors       = require('cors');
-const analyzeRoute = require('./routes/analyze');
+const analyzeRoute = require('../../api/analyze'); // shared with Vercel function
 const askRoute     = require('./routes/ask');
 const remixRoute   = require('./routes/remix');
 
