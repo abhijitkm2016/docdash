@@ -53,6 +53,13 @@ export default function PricingModal({ onClose, onSuccess }) {
   const [processingPlan, setProcessingPlan] = useState(null)
 
   const handlePurchase = async (plan) => {
+    const razorpayKey = import.meta.env.VITE_RAZORPAY_KEY_ID
+    if (!razorpayKey || razorpayKey === 'undefined') {
+      console.error('Razorpay key not configured')
+      alert('Payment configuration error. Please try again later.')
+      return
+    }
+
     setProcessingPlan(plan.id)
     setLoading(true)
     try {
@@ -65,7 +72,7 @@ export default function PricingModal({ onClose, onSuccess }) {
       if (!orderData.orderId) throw new Error('Order creation failed')
 
       const options = {
-        key: import.meta.env.VITE_RAZORPAY_KEY_ID,
+        key: razorpayKey,
         amount: orderData.amount,
         currency: 'INR',
         name: 'DocDash',

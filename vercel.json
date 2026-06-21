@@ -4,12 +4,12 @@
   "buildCommand": "npm run build --prefix frontend",
   "outputDirectory": "frontend/dist",
   "functions": {
-    "api/analyze.js": {
-      "maxDuration": 300
-    },
-    "api/[...slug].js": {
-      "maxDuration": 300
-    }
+    "api/analyze.js":               { "maxDuration": 300 },
+    "api/[...slug].js":             { "maxDuration": 300 },
+    "api/payments/create-order.js": { "maxDuration": 30  },
+    "api/payments/verify.js":       { "maxDuration": 30  },
+    "api/remix/auto.js":            { "maxDuration": 300 },
+    "api/remix/guided.js":          { "maxDuration": 300 }
   },
   "rewrites": [
     { "source": "/((?!api/).*)", "destination": "/index.html" }
