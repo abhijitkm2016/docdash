@@ -160,7 +160,7 @@ function ThemeToggle() {
   return (
     <button className="no-print" onClick={toggle} style={styles.ctrlBtn}
       aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} theme`}>
-      {theme === 'dark' ? '☀ Light' : '🌙 Dark'}
+      {theme === 'dark' ? '☀️ Switch to Light' : '🌙 Switch to Dark'}
     </button>
   );
 }
