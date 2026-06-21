@@ -1,3 +1,4 @@
+import { useState, useRef, useEffect } from 'react';
 import { FilterProvider, useFilter } from '../context/FilterContext';
 import { useTheme } from '../context/ThemeContext';
 import KpiCard          from './KpiCard';
@@ -10,6 +11,148 @@ import DimensionFilters from './DimensionFilters';
 import DataInventory    from './DataInventory';
 import WatchList        from './WatchList';
 import AskYourData      from './AskYourData';
+
+// ── Privacy modal ─────────────────────────────────────────────────────────────
+function PrivacyModal({ onClose }) {
+  useEffect(() => {
+    function onKey(e) { if (e.key === 'Escape') onClose(); }
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [onClose]);
+
+  return (
+    <div style={modalStyles.overlay} onClick={onClose}>
+      <div style={modalStyles.box} onClick={e => e.stopPropagation()} role="dialog" aria-modal="true">
+        <button style={modalStyles.close} onClick={onClose} aria-label="Close">×</button>
+        <p style={modalStyles.heading}>Data &amp; Privacy</p>
+        <p style={modalStyles.body}>
+          Your documents are processed via the Anthropic API and are not stored by DocDash.
+          No document content is retained after your session ends. For sensitive documents,
+          please review Anthropic's data usage policy at{' '}
+          <a href="https://www.anthropic.com/privacy" target="_blank" rel="noopener noreferrer"
+            style={{ color: 'var(--accent)' }}>
+            anthropic.com/privacy
+          </a>.
+        </p>
+      </div>
+    </div>
+  );
+}
+
+const modalStyles = {
+  overlay: {
+    position: 'fixed', inset: 0,
+    background: 'rgba(0,0,0,0.55)',
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    zIndex: 1000,
+  },
+  box: {
+    background: 'var(--card-bg)',
+    border: '1px solid var(--card-border)',
+    borderRadius: '0.75rem',
+    padding: '1.75rem 2rem',
+    maxWidth: 480,
+    width: '90%',
+    position: 'relative',
+    boxShadow: '0 8px 32px rgba(0,0,0,0.35)',
+  },
+  close: {
+    position: 'absolute', top: '0.75rem', right: '1rem',
+    background: 'none', border: 'none',
+    fontSize: '1.5rem', lineHeight: 1,
+    color: 'var(--text-muted)', cursor: 'pointer',
+  },
+  heading: {
+    fontSize: '1rem', fontWeight: 700,
+    color: 'var(--text-primary)', marginBottom: '0.75rem',
+  },
+  body: {
+    fontSize: '0.875rem', color: 'var(--text-secondary)', lineHeight: 1.65,
+  },
+};
+
+// ── Export dropdown (Print/PDF + Download) ────────────────────────────────────
+function ExportButton({ standaloneHtml, title }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+
+  useEffect(() => {
+    function onClick(e) { if (ref.current && !ref.current.contains(e.target)) setOpen(false); }
+    document.addEventListener('mousedown', onClick);
+    return () => document.removeEventListener('mousedown', onClick);
+  }, []);
+
+  function download() {
+    const blob = new Blob([standaloneHtml], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${(title || 'dashboard').replace(/[^a-z0-9]/gi, '_').toLowerCase()}.html`;
+    a.click();
+    URL.revokeObjectURL(url);
+    setOpen(false);
+  }
+
+  return (
+    <div ref={ref} style={{ position: 'relative' }} className="no-print">
+      <button
+        style={exportStyles.btn}
+        onClick={() => setOpen(o => !o)}
+        aria-haspopup="true"
+        aria-expanded={open}
+      >
+        ⬇ Export
+      </button>
+      {open && (
+        <div style={exportStyles.dropdown}>
+          <button style={exportStyles.item} onClick={() => { window.print(); setOpen(false); }}>
+            🖨 Print / PDF
+          </button>
+          <button style={exportStyles.item} onClick={download}>
+            ↓ Download
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+const exportStyles = {
+  btn: {
+    background: 'var(--card-bg)',
+    border: '1px solid var(--card-border)',
+    color: 'var(--text-secondary)',
+    padding: '0.5rem 0.875rem',
+    borderRadius: '0.5rem',
+    fontWeight: 500,
+    fontSize: '0.875rem',
+    cursor: 'pointer',
+    whiteSpace: 'nowrap',
+  },
+  dropdown: {
+    position: 'absolute',
+    top: 'calc(100% + 4px)',
+    right: 0,
+    background: 'var(--card-bg)',
+    border: '1px solid var(--card-border)',
+    borderRadius: '0.5rem',
+    boxShadow: '0 4px 16px rgba(0,0,0,0.18)',
+    minWidth: 160,
+    zIndex: 100,
+    overflow: 'hidden',
+  },
+  item: {
+    display: 'block',
+    width: '100%',
+    background: 'none',
+    border: 'none',
+    textAlign: 'left',
+    padding: '0.625rem 1rem',
+    fontSize: '0.875rem',
+    color: 'var(--text-secondary)',
+    cursor: 'pointer',
+  },
+};
 
 // ── Theme toggle ──────────────────────────────────────────────────────────────
 function ThemeToggle() {
@@ -78,11 +221,14 @@ function DashboardInner({
   data, standaloneHtml, sessionId,
   onReset, onRemix, remixing, remixVersion,
 }) {
+  const [showPrivacy, setShowPrivacy] = useState(false);
   const dimensions       = data.dimensions       || [];
   const chartAnnotations = data.chartAnnotations || [];
   const fieldMetadata    = data.fieldMetadata    || {};
 
   return (
+    <>
+    {showPrivacy && <PrivacyModal onClose={() => setShowPrivacy(false)} />}
     <div
       style={{
         ...styles.page,
@@ -103,8 +249,7 @@ function DashboardInner({
         </div>
         <div style={styles.controls}>
           <ThemeToggle />
-          <PrintButton />
-          <DownloadButton standaloneHtml={standaloneHtml} title={data.title} />
+          <ExportButton standaloneHtml={standaloneHtml} title={data.title} />
           <button
             onClick={onRemix}
             disabled={remixing}
@@ -113,8 +258,16 @@ function DashboardInner({
               animation: remixing ? 'pulse 1s ease-in-out infinite' : 'none',
             }}
             aria-label="Generate a fresh perspective on this data"
+            title="Regenerate this dashboard — reruns the AI analysis on the same document."
           >
             🔀 {remixing ? 'Remixing…' : 'Remix'}
+          </button>
+          <button
+            onClick={() => setShowPrivacy(true)}
+            style={styles.privacyLink}
+            aria-label="Data and privacy information"
+          >
+            ℹ Data &amp; Privacy
           </button>
           <button onClick={onReset} style={styles.primaryBtn}>
             ↑ New File
@@ -128,7 +281,7 @@ function DashboardInner({
         {data.standfirst && (
           <p style={styles.standfirst}>{data.standfirst}</p>
         )}
-        <p style={styles.metaLine}>AI-Generated Analysis</p>
+        <p style={styles.metaLine}>Generated from source document</p>
       </div>
 
       {/* ── Executive Summary ─────────────────────────────────── */}
@@ -209,6 +362,7 @@ function DashboardInner({
         </Section>
       )}
     </div>
+    </>
   );
 }
 
@@ -287,6 +441,15 @@ const styles = {
     fontWeight: 600,
     fontSize: '0.875rem',
     cursor: 'pointer',
+    whiteSpace: 'nowrap',
+  },
+  privacyLink: {
+    background: 'none',
+    border: 'none',
+    color: 'var(--text-muted)',
+    fontSize: '0.8125rem',
+    cursor: 'pointer',
+    padding: '0.25rem 0.25rem',
     whiteSpace: 'nowrap',
   },
 

@@ -1,13 +1,12 @@
 import { useState, useRef } from 'react';
 import {
-  BarChart, Bar, LineChart, Line, PieChart, Pie, Cell,
-  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
+  BarChart, Bar, LineChart, Line,
+  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   ReferenceDot,
 } from 'recharts';
 import { useFilter } from '../context/FilterContext';
 import { useFilteredChartData } from '../hooks/useFilteredData';
 
-const PALETTE = ['#4F8EF7', '#34A853', '#FBBC04', '#EA4335', '#A142F4', '#24C1E0', '#FF7043'];
 
 // ── Tooltip helpers ───────────────────────────────────────────────────────────
 
@@ -206,11 +205,6 @@ export default function ChartPanel({ chart, annotations = [], fieldMeta = {} }) 
     if (value !== undefined) setFilter(chart.dimensionId, String(value));
   }
 
-  function handlePieClick(entry) {
-    if (!chart.dimensionId) return;
-    setFilter(chart.dimensionId, String(entry[chart.dataKey]));
-  }
-
   function onPinEnter(e, annotation, cx, cy) {
     if (!containerRef.current) return;
     const rect = containerRef.current.getBoundingClientRect();
@@ -305,35 +299,21 @@ export default function ChartPanel({ chart, annotations = [], fieldMeta = {} }) 
             {annotationDots}
           </LineChart>
         ) : (
-          <PieChart>
-            <Pie
-              data={data}
-              dataKey={chart.valueKey}
-              nameKey={chart.dataKey}
-              cx="50%" cy="50%"
-              outerRadius={85}
-              onClick={handlePieClick}
-            >
-              {data.map((_, i) => (
-                <Cell key={i} fill={PALETTE[i % PALETTE.length]} />
-              ))}
-            </Pie>
+          <BarChart
+            data={[...data].sort((a, b) => b[chart.valueKey] - a[chart.valueKey])}
+            layout="vertical"
+            onClick={handleBarLineClick}
+            margin={{ left: 8, right: 16, top: 4, bottom: 4 }}
+          >
+            <CartesianGrid {...gridProps} horizontal={false} />
+            <XAxis type="number" tick={axisTickStyle} />
+            <YAxis type="category" dataKey={chart.dataKey} tick={{ ...axisTickStyle, fontSize: 10 }} width={120} />
             <Tooltip content={props => <ExecutiveTooltip {...props} fieldMeta={fieldMeta} />} />
-          </PieChart>
+            <Bar dataKey={chart.valueKey} fill="var(--accent)" radius={[0, 4, 4, 0]} />
+          </BarChart>
         )}
       </ResponsiveContainer>
 
-      {/* Custom pie legend — rendered as HTML chips, never overlaps */}
-      {chart.type === 'pie' && data.length > 0 && (
-        <div style={styles.pieLegend}>
-          {data.map((entry, i) => (
-            <span key={i} style={styles.pieLegendItem}>
-              <span style={{ ...styles.pieLegendDot, background: PALETTE[i % PALETTE.length] }} />
-              {String(entry[chart.dataKey] ?? '')}
-            </span>
-          ))}
-        </div>
-      )}
 
       {/* Annotation hover tooltip */}
       {annTooltip && (
@@ -386,29 +366,6 @@ const styles = {
     flexShrink: 0,
   },
   hint: { marginTop: '0.5rem', fontSize: '0.6875rem', color: 'var(--text-muted)', textAlign: 'center' },
-  pieLegend: {
-    display: 'flex',
-    flexWrap: 'wrap',
-    gap: '0.5rem 1rem',
-    justifyContent: 'center',
-    marginTop: '0.75rem',
-    paddingTop: '0.5rem',
-    borderTop: '1px solid var(--card-border)',
-  },
-  pieLegendItem: {
-    display: 'inline-flex',
-    alignItems: 'center',
-    gap: '0.375rem',
-    fontSize: '0.75rem',
-    color: 'var(--text-secondary)',
-    lineHeight: 1.4,
-  },
-  pieLegendDot: {
-    width: 10,
-    height: 10,
-    borderRadius: '2px',
-    flexShrink: 0,
-  },
   annTooltip: {
     position: 'absolute',
     transform: 'translate(-50%, -100%)',

@@ -63,7 +63,7 @@ Schema:
     "sheetsAnalysed": ["Sheet1"]
   },
 
-  "title": "Insight-driven headline — state the finding, NOT the filename",
+  "title": "Concise, neutral, descriptive title in the format: [Subject/Entity Name] — [Document Type] ([Year or Date Range if available]). Example: 'Abhijit Kumar Mishra — Career Intelligence Report (2016–2026)'. Do NOT use superlatives, adjectives, or promotional language. The title should read like an analyst wrote it, not a recruiter.",
 
   "standfirst": "One sentence 60-second summary — complements title, never repeats it",
 
@@ -152,7 +152,7 @@ Schema:
 📋 FIELD RULES
 ════════════════════════════════════════
 
-title: insight-driven headline, never a generic label or filename.
+title: neutral analytical format — [Subject] — [Document Type] ([Date Range]). No superlatives, no promotional language.
 standfirst: one sentence, complements title without repeating it.
 summary bullet 1: THE primary finding — SCR-framed, written as a complete insight sentence.
   NEVER prefix with "Primary finding:", "Key finding:", "Main insight:" or any label.

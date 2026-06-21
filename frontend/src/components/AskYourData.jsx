@@ -83,7 +83,7 @@ export default function AskYourData({ sessionId }) {
           value={question}
           onChange={e => setQuestion(e.target.value)}
           onKeyDown={onKeyDown}
-          placeholder="💬  What does this data tell me about..."
+          placeholder="💬  Ask a question — e.g. 'What does this show about career trajectory?'"
           aria-label="Ask a question about your data"
           disabled={loading}
         />
