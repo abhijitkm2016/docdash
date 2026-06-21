@@ -222,6 +222,28 @@ function AppInner() {
 
   return (
     <>
+      {/* ── Landing page auth bar — always visible ──────────────── */}
+      <div style={styles.landingAuthBar}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+          <span style={{ fontSize: '1rem' }}>⚡</span>
+          <span style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--accent)' }}>DocDash</span>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          {user ? (
+            <>
+              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                {user.email.length > 28 ? user.email.slice(0, 26) + '…' : user.email}
+              </span>
+              <button onClick={signOut} style={textLinkStyle}>Sign out</button>
+            </>
+          ) : (
+            <button onClick={() => setShowAuthModal(true)} style={navBtnStyle}>
+              Sign in
+            </button>
+          )}
+        </div>
+      </div>
+
       <FileUpload
         onResult={handleResult}
         onError={setError}
@@ -287,6 +309,14 @@ const userEmailStyle = {
 };
 
 const styles = {
+  landingAuthBar: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: '0.625rem 1.5rem',
+    borderBottom: '1px solid var(--card-border)',
+    background: 'var(--card-bg)',
+  },
   sampleBanner: {
     background: '#EFF6FF',
     border: '1px solid #BFDBFE',

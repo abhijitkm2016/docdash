@@ -31,7 +31,7 @@ export default function AuthModal({ onClose }) {
               },
             },
           }}
-          providers={['google']}
+          providers={[]}
           redirectTo={window.location.origin}
           magicLink={true}
         />

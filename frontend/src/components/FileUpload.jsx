@@ -183,11 +183,11 @@ export default function FileUpload({ onResult, onError, onWarning, onSampleLoad 
     await runAnalysis(formData);
   }
 
-  // Sample document — bypass file picker
+  // Sample document — send as CSV so backend fileFilter and fileParser both accept it
   async function handleSampleClick() {
     if (loading) return;
-    const blob = new Blob([SAMPLE_TEXT], { type: 'text/plain' });
-    const file = new File([blob], 'sample-q2-2026-product-review.txt', { type: 'text/plain' });
+    const blob = new Blob([SAMPLE_TEXT], { type: 'text/csv' });
+    const file = new File([blob], 'sample-q2-2026-product-review.csv', { type: 'text/csv' });
     const formData = new FormData();
     formData.append('files', file);
     onSampleLoad?.();
