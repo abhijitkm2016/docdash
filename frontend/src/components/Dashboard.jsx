@@ -241,7 +241,7 @@ function ActiveFilterBar({ dimensions }) {
 // ── Dashboard inner ───────────────────────────────────────────────────────────
 function DashboardInner({
   data, standaloneHtml, sessionId,
-  onReset, onRemix, remixing, remixVersion,
+  onReset, remixControl, remixLoading, remixVersion,
   authControls, shareButton, readOnly,
   isAuthenticated, onRequestSignIn,
 }) {
@@ -256,7 +256,7 @@ function DashboardInner({
     <div
       style={{
         ...styles.page,
-        opacity:    remixing ? 0.6 : 1,
+        opacity:    remixLoading ? 0.6 : 1,
         transition: 'opacity 0.3s ease',
       }}
     >
@@ -283,23 +283,7 @@ function DashboardInner({
               onRequestSignIn={onRequestSignIn}
             />
           )}
-          {!readOnly && (
-            <button
-              onClick={onRemix}
-              disabled={remixing}
-              style={{
-                ...styles.ctrlBtn,
-                opacity: isAuthenticated ? 1 : 0.5,
-                animation: remixing ? 'pulse 1s ease-in-out infinite' : 'none',
-              }}
-              aria-label="Generate a fresh perspective on this data"
-              title={isAuthenticated
-                ? 'Regenerate this dashboard — reruns the AI analysis on the same document.'
-                : 'Sign in to remix dashboards'}
-            >
-              🔀 {remixing ? 'Remixing…' : 'Remix'}
-            </button>
-          )}
+          {!readOnly && remixControl}
           <button
             onClick={() => setShowPrivacy(true)}
             style={styles.privacyLink}

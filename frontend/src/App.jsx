@@ -15,6 +15,7 @@ import ErrorState       from './components/ErrorState';
 import WelcomeScreen    from './components/WelcomeScreen';
 import GuestBanner      from './components/GuestBanner';
 import PricingModal     from './components/PricingModal';
+import RemixPopover     from './components/RemixPopover';
 
 function detectErrorType(msg) {
   if (!msg) return 'generic';
@@ -45,7 +46,7 @@ function AppInner() {
 
   const { user, signOut, loading: authLoading } = useAuth();
   const { saveDocument, loadDocument } = useDocuments();
-  const { credits, deductCredit } = useCredits();
+  const { credits, deductCredit, restoreCredit } = useCredits();
 
   const [result,            setResult]            = useState(null);
   const [sessionId,         setSessionId]         = useState(null);
@@ -53,7 +54,8 @@ function AppInner() {
   const [currentDocumentId, setCurrentDocumentId] = useState(null);
   const [error,             setError]             = useState(null);
   const [warning,           setWarning]           = useState(null);
-  const [remixing,          setRemixing]          = useState(false);
+  const [remixLoading,      setRemixLoading]      = useState(false);
+  const [showRemixPopover,  setShowRemixPopover]  = useState(false);
   const [remixVersion,      setRemixVersion]      = useState(0);
   const [animKey,           setAnimKey]           = useState(0);
   const [isSample,          setIsSample]          = useState(false);
@@ -122,44 +124,47 @@ function AppInner() {
     setIsLoading(false);
   }
 
-  async function handleRemix() {
-    if (!sessionId || remixing) return;
-    // Frontend guard — guests cannot remix
-    if (!user) {
-      setShowAuthModal(true);
-      return;
-    }
-    setRemixing(true);
-    setError(null);
+  async function doRemix(endpoint, extraBody = {}) {
+    if (!sessionId || remixLoading) return;
+    if (!user) { setShowAuthModal(true); return; }
+    if (credits && credits.credits_remaining <= 0) { setShowPricingModal(true); return; }
 
+    setRemixLoading(true);
+    setError(null);
+    await deductCredit();
+
+    let success = false;
     try {
       const { data: { session } } = await supabase.auth.getSession();
-      const res  = await fetch('/api/remix', {
-        method:  'POST',
+      const res = await fetch(`/api/remix/${endpoint}`, {
+        method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           ...(session?.access_token && { 'Authorization': `Bearer ${session.access_token}` }),
         },
-        body:    JSON.stringify({ sessionId }),
+        body: JSON.stringify({ sessionId, ...extraBody }),
       });
       const data = await res.json();
       if (res.status === 403 && data.error === 'remix_requires_auth') {
         setShowAuthModal(true);
-        setRemixing(false);
         return;
       }
       if (!res.ok) throw new Error(data.error || 'Remix failed');
-
       setResult(data);
       setSessionId(data.sessionId || sessionId);
       setRemixVersion(v => v + 1);
       setAnimKey(k => k + 1);
+      success = true;
     } catch (err) {
       setError(err.message);
     } finally {
-      setRemixing(false);
+      if (!success) await restoreCredit();
+      setRemixLoading(false);
     }
   }
+
+  function handleAutoRemix() { doRemix('auto'); }
+  function handleGuidedRemix(instructions) { doRemix('guided', { instructions }); }
 
   async function handleLoadFromHistory(docId) {
     const doc = await loadDocument(docId);
@@ -238,6 +243,36 @@ function AppInner() {
     </>
   );
 
+  // Remix control — only when a live session exists (not for history loads)
+  const remixControl = sessionId ? (
+    <div style={{ position: 'relative' }} className="no-print">
+      <button
+        onClick={() => {
+          if (!user) { setShowAuthModal(true); return; }
+          setShowRemixPopover(p => !p);
+        }}
+        disabled={remixLoading}
+        style={{
+          ...navBtnStyle,
+          opacity: remixLoading ? 0.5 : 1,
+          animation: remixLoading ? 'pulse 1s ease-in-out infinite' : 'none',
+        }}
+        aria-label="Remix this dashboard"
+        title={user ? 'Generate a new perspective on this document' : 'Sign in to remix'}
+      >
+        🔀 {remixLoading ? 'Remixing…' : 'Remix'}
+      </button>
+      {showRemixPopover && (
+        <RemixPopover
+          onAutoRemix={handleAutoRemix}
+          onGuidedRemix={handleGuidedRemix}
+          onClose={() => setShowRemixPopover(false)}
+          loading={remixLoading}
+        />
+      )}
+    </div>
+  ) : null;
+
   if (result) {
     return (
       <div key={animKey} style={{ animation: 'fadeInUp 0.35s ease' }}>
@@ -279,8 +314,8 @@ function AppInner() {
           standaloneHtml={result.standaloneHtml}
           sessionId={sessionId}
           onReset={handleReset}
-          onRemix={handleRemix}
-          remixing={remixing}
+          remixControl={remixControl}
+          remixLoading={remixLoading}
           remixVersion={remixVersion}
           authControls={authControls}
           shareButton={

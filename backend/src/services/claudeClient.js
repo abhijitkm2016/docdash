@@ -204,7 +204,7 @@ Rules:
 - Write for an executive — interpretive not descriptive`;
 
 // ── analyzeDocument ────────────────────────────────────────────────────────────
-async function analyzeDocument(parsedFile, fileName, { remixMode = false, userContext = '' } = {}) {
+async function analyzeDocument(parsedFile, fileName, { remixMode = false, userContext = '', guidedInstruction = '' } = {}) {
   const documentText = parsedFile.text;
 
   const remixInstruction = remixMode ? `
@@ -227,7 +227,7 @@ Do NOT produce the same dashboard twice.` : '';
     messages: [
       {
         role: 'user',
-        content: `Analyse this document and return the structured JSON dashboard data.
+        content: `${guidedInstruction ? `GUIDED REMIX INSTRUCTIONS:\n${guidedInstruction}\n\n` : ''}Analyse this document and return the structured JSON dashboard data.
 
 File name: ${fileName}
 File type: ${parsedFile.type}
