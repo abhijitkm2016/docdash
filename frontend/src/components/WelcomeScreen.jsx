@@ -1,7 +1,42 @@
+const PRICING = [
+  {
+    name: 'Free',
+    price: '₹0',
+    credits: '5 credits',
+    perCredit: 'To try',
+    highlight: false,
+    badge: null
+  },
+  {
+    name: 'Starter',
+    price: '₹199',
+    credits: '5 credits',
+    perCredit: '₹39 each',
+    highlight: false,
+    badge: 'Save 33%'
+  },
+  {
+    name: 'Value',
+    price: '₹499',
+    credits: '15 credits',
+    perCredit: '₹33 each',
+    highlight: true,
+    badge: 'Popular'
+  },
+  {
+    name: 'Pro',
+    price: '₹999',
+    credits: '40 credits',
+    perCredit: '₹25 each',
+    highlight: false,
+    badge: 'Save 58%'
+  }
+]
+
 export default function WelcomeScreen({ onSignIn, onContinueAsGuest }) {
   return (
     <div style={{
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
       minHeight: 'calc(100vh - 60px)', padding: '24px'
     }}>
       <div style={{
@@ -76,6 +111,93 @@ export default function WelcomeScreen({ onSignIn, onContinueAsGuest }) {
             </div>
           ))}
         </div>
+      </div>
+
+      {/* Pricing section */}
+      <div style={{
+        textAlign: 'center', margin: '24px 0 16px',
+        fontSize: '12px', color: '#94A3B8',
+        letterSpacing: '0.06em', textTransform: 'uppercase',
+        fontWeight: 500
+      }}>
+        Simple pricing — credits never expire
+      </div>
+
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(4, 1fr)',
+        gap: '8px',
+        maxWidth: '420px',
+        width: '100%',
+        margin: '0 auto'
+      }}>
+        {PRICING.map(plan => (
+          <div key={plan.name} style={{
+            background: plan.highlight ? '#EFF6FF' : '#F8FAFC',
+            border: plan.highlight
+              ? '1px solid #BFDBFE'
+              : '1px solid #E2E8F0',
+            borderRadius: '10px',
+            padding: '12px 8px',
+            textAlign: 'center',
+            position: 'relative'
+          }}>
+            {plan.badge && (
+              <div style={{
+                position: 'absolute', top: '-8px',
+                left: '50%', transform: 'translateX(-50%)',
+                background: plan.highlight ? '#2563EB' : '#64748B',
+                color: '#fff', fontSize: '9px', fontWeight: 700,
+                padding: '2px 6px', borderRadius: '100px',
+                whiteSpace: 'nowrap', letterSpacing: '0.04em'
+              }}>
+                {plan.badge}
+              </div>
+            )}
+
+            <div style={{
+              fontSize: '11px', fontWeight: 600,
+              color: plan.highlight ? '#1D4ED8' : '#64748B',
+              marginBottom: '6px'
+            }}>
+              {plan.name}
+            </div>
+
+            <div style={{
+              fontSize: '16px', fontWeight: 700,
+              color: '#0F172A', marginBottom: '2px'
+            }}>
+              {plan.price}
+            </div>
+
+            <div style={{
+              fontSize: '11px', color: '#64748B',
+              marginBottom: '2px'
+            }}>
+              {plan.credits}
+            </div>
+
+            <div style={{
+              fontSize: '10px', color: '#94A3B8'
+            }}>
+              {plan.perCredit}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div style={{
+        textAlign: 'center', marginTop: '12px',
+        fontSize: '12px', color: '#94A3B8'
+      }}>
+        Or pay as you go — ₹59 per dashboard · No subscription
+      </div>
+
+      <div style={{
+        textAlign: 'center', marginTop: '6px',
+        fontSize: '11px', color: '#CBD5E1'
+      }}>
+        Start free · Credits never expire · Restored automatically on errors
       </div>
     </div>
   )
