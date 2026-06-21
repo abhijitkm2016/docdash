@@ -128,16 +128,7 @@ function DashboardInner({
         {data.standfirst && (
           <p style={styles.standfirst}>{data.standfirst}</p>
         )}
-        {data.metadata?.source && (
-          <p style={styles.metaLine}>
-            {data.metadata.source}
-            {data.metadata.asOf ? ` · As of ${data.metadata.asOf}` : ''}
-            {' · '}
-            <em style={{ fontStyle: 'normal', color: 'var(--text-muted)' }}>
-              AI-Generated Analysis
-            </em>
-          </p>
-        )}
+        <p style={styles.metaLine}>AI-Generated Analysis</p>
       </div>
 
       {/* ── Executive Summary ─────────────────────────────────── */}
