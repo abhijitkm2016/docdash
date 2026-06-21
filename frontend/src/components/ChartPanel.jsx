@@ -319,10 +319,21 @@ export default function ChartPanel({ chart, annotations = [], fieldMeta = {} }) 
               ))}
             </Pie>
             <Tooltip content={props => <ExecutiveTooltip {...props} fieldMeta={fieldMeta} />} />
-            <Legend wrapperStyle={{ fontSize: 12, color: 'var(--text-secondary)' }} />
           </PieChart>
         )}
       </ResponsiveContainer>
+
+      {/* Custom pie legend — rendered as HTML chips, never overlaps */}
+      {chart.type === 'pie' && data.length > 0 && (
+        <div style={styles.pieLegend}>
+          {data.map((entry, i) => (
+            <span key={i} style={styles.pieLegendItem}>
+              <span style={{ ...styles.pieLegendDot, background: PALETTE[i % PALETTE.length] }} />
+              {String(entry[chart.dataKey] ?? '')}
+            </span>
+          ))}
+        </div>
+      )}
 
       {/* Annotation hover tooltip */}
       {annTooltip && (
@@ -375,6 +386,29 @@ const styles = {
     flexShrink: 0,
   },
   hint: { marginTop: '0.5rem', fontSize: '0.6875rem', color: 'var(--text-muted)', textAlign: 'center' },
+  pieLegend: {
+    display: 'flex',
+    flexWrap: 'wrap',
+    gap: '0.5rem 1rem',
+    justifyContent: 'center',
+    marginTop: '0.75rem',
+    paddingTop: '0.5rem',
+    borderTop: '1px solid var(--card-border)',
+  },
+  pieLegendItem: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '0.375rem',
+    fontSize: '0.75rem',
+    color: 'var(--text-secondary)',
+    lineHeight: 1.4,
+  },
+  pieLegendDot: {
+    width: 10,
+    height: 10,
+    borderRadius: '2px',
+    flexShrink: 0,
+  },
   annTooltip: {
     position: 'absolute',
     transform: 'translate(-50%, -100%)',

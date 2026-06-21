@@ -90,45 +90,21 @@ function DashboardInner({
         transition: 'opacity 0.3s ease',
       }}
     >
-      {/* ── Header ───────────────────────────���──────────────────── */}
-      <div style={styles.header}>
-        <div style={styles.headerLeft}>
-          <div style={styles.brandRow}>
-            <span style={styles.brandIcon}>⚡</span>
-            <span style={styles.brandName}>DocDash</span>
-            {remixVersion > 0 && (
-              <span style={styles.perspectiveBadge}>
-                Perspective #{remixVersion + 1}
-              </span>
-            )}
-          </div>
-
-          {/* Insight-driven H1 */}
-          <h1 style={styles.h1}>{data.title}</h1>
-
-          {/* Standfirst */}
-          {data.standfirst && (
-            <p style={styles.standfirst}>{data.standfirst}</p>
-          )}
-
-          {data.metadata?.source && (
-            <p style={styles.metaLine}>
-              {data.metadata.source}
-              {data.metadata.asOf ? ` · As of ${data.metadata.asOf}` : ''}
-              {' · '}
-              <em style={{ fontStyle: 'normal', color: 'var(--text-muted)' }}>
-                AI-Generated Analysis
-              </em>
-            </p>
+      {/* ── Topbar: brand + controls ─────────────────────────── */}
+      <div style={styles.topbar} className="no-print">
+        <div style={styles.brandRow}>
+          <span style={styles.brandIcon}>⚡</span>
+          <span style={styles.brandName}>DocDash</span>
+          {remixVersion > 0 && (
+            <span style={styles.perspectiveBadge}>
+              Perspective #{remixVersion + 1}
+            </span>
           )}
         </div>
-
-        {/* Controls */}
-        <div style={styles.controls} className="no-print">
+        <div style={styles.controls}>
           <ThemeToggle />
           <PrintButton />
           <DownloadButton standaloneHtml={standaloneHtml} title={data.title} />
-          {/* Remix button */}
           <button
             onClick={onRemix}
             disabled={remixing}
@@ -144,6 +120,24 @@ function DashboardInner({
             ↑ New File
           </button>
         </div>
+      </div>
+
+      {/* ── Title block: full width ───────────────────────────── */}
+      <div style={styles.titleBlock}>
+        <h1 style={styles.h1}>{data.title}</h1>
+        {data.standfirst && (
+          <p style={styles.standfirst}>{data.standfirst}</p>
+        )}
+        {data.metadata?.source && (
+          <p style={styles.metaLine}>
+            {data.metadata.source}
+            {data.metadata.asOf ? ` · As of ${data.metadata.asOf}` : ''}
+            {' · '}
+            <em style={{ fontStyle: 'normal', color: 'var(--text-muted)' }}>
+              AI-Generated Analysis
+            </em>
+          </p>
+        )}
       </div>
 
       {/* ── Executive Summary ─────────────────────────────────── */}
@@ -240,17 +234,19 @@ export default function Dashboard(props) {
 const styles = {
   page: { maxWidth: 1200, margin: '0 auto', padding: '2rem 1.5rem' },
 
-  header: {
+  topbar: {
     display: 'flex',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
+    alignItems: 'center',
     flexWrap: 'wrap',
-    gap: '1.25rem',
-    marginBottom: '2.5rem',
+    gap: '0.75rem',
+    marginBottom: '1.5rem',
   },
-  headerLeft: { flex: 1, minWidth: 280 },
+  titleBlock: {
+    marginBottom: '2rem',
+  },
 
-  brandRow:   { display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.5rem', flexWrap: 'wrap' },
+  brandRow:   { display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' },
   brandIcon:  { fontSize: '1.125rem' },
   brandName:  { fontSize: '0.9375rem', fontWeight: 700, color: 'var(--accent)' },
   perspectiveBadge: {
@@ -276,7 +272,6 @@ const styles = {
     color: 'var(--text-secondary)',
     lineHeight: 1.6,
     marginBottom: '0.375rem',
-    maxWidth: 680,
   },
   metaLine: { fontSize: '0.8125rem', color: 'var(--text-muted)' },
 
