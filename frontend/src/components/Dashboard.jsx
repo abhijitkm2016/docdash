@@ -179,17 +179,6 @@ function DashboardInner({
         </div>
       </Section>
 
-      {/* ── Data Table ────────────────────────────────────────── */}
-      {data.tableData?.rows?.length > 0 && (
-        <Section title="Data Table">
-          <DataTable
-            columns={data.tableData.columns}
-            rows={data.tableData.rows}
-            dimensions={dimensions}
-          />
-        </Section>
-      )}
-
       {/* ── Analysis ──────────────────────────────────────────── */}
       {data.narrative && (
         <Section title="Analysis">
@@ -208,6 +197,17 @@ function DashboardInner({
       {sessionId && (
         <Section>
           <AskYourData sessionId={sessionId} />
+        </Section>
+      )}
+
+      {/* ── Data Table ────────────────────────────────────────── */}
+      {data.tableData?.rows?.length > 0 && (
+        <Section title="Data Table">
+          <DataTable
+            columns={data.tableData.columns}
+            rows={data.tableData.rows}
+            dimensions={dimensions}
+          />
         </Section>
       )}
 
