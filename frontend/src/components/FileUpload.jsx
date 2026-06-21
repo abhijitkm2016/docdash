@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react';
+import { supabase } from '../lib/supabase';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 const ACCEPTED       = '.pdf,.xlsx,.xls,.csv,.docx,.doc,.pptx,.ppt';
@@ -54,7 +55,7 @@ function truncateName(name, max = 42) {
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────
-export default function FileUpload({ onResult, onError, onWarning, onSampleLoad, onLoadingChange, onBeforeProcess }) {
+export default function FileUpload({ onResult, onError, onWarning, onSampleLoad, onLoadingChange, onBeforeProcess, onAuthRequired }) {
   const [files,       setFiles]       = useState([]);   // File[]
   const [dragging,    setDragging]    = useState(false);
   const [loading,     setLoading]     = useState(false);
@@ -112,7 +113,22 @@ export default function FileUpload({ onResult, onError, onWarning, onSampleLoad,
     }
 
     try {
-      const res = await fetch('/api/analyze', { method: 'POST', body: formData });
+      const { data: { session } } = await supabase.auth.getSession();
+      const headers = session?.access_token
+        ? { 'Authorization': `Bearer ${session.access_token}` }
+        : {};
+
+      const res = await fetch('/api/analyze', { method: 'POST', body: formData, headers });
+
+      if (res.status === 429) {
+        const data = await res.json();
+        if (data.requiresAuth) {
+          setLoading(false);
+          onLoadingChange?.(false);
+          onAuthRequired?.(data.message);
+          return;
+        }
+      }
 
       if (!res.ok) {
         const text = await res.text();

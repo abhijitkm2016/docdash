@@ -23,6 +23,7 @@ const { analyzeDocument }     = require('../backend/src/services/claudeClient');
 const { buildStandaloneHtml } = require('../backend/src/utils/htmlExporter');
 const { condenseText }        = require('../backend/src/utils/condenseText');
 const sessionStore            = require('../backend/src/services/sessionStore');
+const { guestGenerationLimit } = require('../backend/src/middleware/rateLimit');
 
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -52,7 +53,7 @@ const upload = multer({
 
 const app = express();
 
-app.post('*', upload.array('files', 10), async (req, res) => {
+app.post('*', guestGenerationLimit, upload.array('files', 10), async (req, res) => {
   const files = req.files || [];
 
   res.setHeader('Content-Type', 'text/event-stream');

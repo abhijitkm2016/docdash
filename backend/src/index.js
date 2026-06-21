@@ -7,6 +7,7 @@ const analyzeRoute  = require('../../api/analyze'); // shared with Vercel functi
 const askRoute      = require('./routes/ask');
 const remixRoute    = require('./routes/remix');
 const paymentsRoute = require('./routes/payments');
+const { guestRemixBlock } = require('./middleware/rateLimit');
 
 const app  = express();
 const PORT = process.env.PORT || 3001;
@@ -16,7 +17,7 @@ app.use(express.json({ limit: '50mb' }));
 
 app.use('/api/analyze',  analyzeRoute);
 app.use('/api/ask',      askRoute);
-app.use('/api/remix',    remixRoute);
+app.use('/api/remix',    guestRemixBlock, remixRoute);
 app.use('/api/payments', paymentsRoute);
 
 app.get('/api/health', (_req, res) => res.json({ status: 'ok' }));

@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { ThemeProvider } from './context/ThemeContext';
 import { useAuth } from './contexts/AuthContext';
+import { supabase } from './lib/supabase';
 import { useDocuments } from './hooks/useDocuments';
 import { useCredits } from './hooks/useCredits';
 import FileUpload       from './components/FileUpload';
@@ -62,6 +63,7 @@ function AppInner() {
   const [guestMode,         setGuestMode]         = useState(false);
   const [showPricingModal,  setShowPricingModal]  = useState(false);
   const [creditSuccess,     setCreditSuccess]     = useState(null);
+  const [guestLimitMessage, setGuestLimitMessage] = useState(null);
 
   async function handleResult(data, fileName) {
     setResult(data);
@@ -122,16 +124,30 @@ function AppInner() {
 
   async function handleRemix() {
     if (!sessionId || remixing) return;
+    // Frontend guard — guests cannot remix
+    if (!user) {
+      setShowAuthModal(true);
+      return;
+    }
     setRemixing(true);
     setError(null);
 
     try {
+      const { data: { session } } = await supabase.auth.getSession();
       const res  = await fetch('/api/remix', {
         method:  'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(session?.access_token && { 'Authorization': `Bearer ${session.access_token}` }),
+        },
         body:    JSON.stringify({ sessionId }),
       });
       const data = await res.json();
+      if (res.status === 403 && data.error === 'remix_requires_auth') {
+        setShowAuthModal(true);
+        setRemixing(false);
+        return;
+      }
       if (!res.ok) throw new Error(data.error || 'Remix failed');
 
       setResult(data);
@@ -293,7 +309,14 @@ function AppInner() {
           </div>
         )}
 
-        {showAuthModal && <AuthModal onClose={() => setShowAuthModal(false)} />}
+        {showAuthModal && (
+          <>
+            {guestLimitMessage && (
+              <div style={styles.guestLimitBanner}>{guestLimitMessage}</div>
+            )}
+            <AuthModal onClose={() => { setShowAuthModal(false); setGuestLimitMessage(null); }} />
+          </>
+        )}
         {showPricingModal && (
           <PricingModal
             onClose={() => setShowPricingModal(false)}
@@ -353,7 +376,14 @@ function AppInner() {
           onSignIn={() => setShowAuthModal(true)}
           onContinueAsGuest={() => setGuestMode(true)}
         />
-        {showAuthModal && <AuthModal onClose={() => setShowAuthModal(false)} />}
+        {showAuthModal && (
+          <>
+            {guestLimitMessage && (
+              <div style={styles.guestLimitBanner}>{guestLimitMessage}</div>
+            )}
+            <AuthModal onClose={() => { setShowAuthModal(false); setGuestLimitMessage(null); }} />
+          </>
+        )}
         {showPricingModal && (
           <PricingModal
             onClose={() => setShowPricingModal(false)}
@@ -399,6 +429,10 @@ function AppInner() {
           onSampleLoad={() => setIsSample(true)}
           onLoadingChange={setIsLoading}
           onBeforeProcess={handleBeforeProcess}
+          onAuthRequired={(msg) => {
+            setGuestLimitMessage(msg);
+            setShowAuthModal(true);
+          }}
         />
       </div>
 
@@ -408,7 +442,14 @@ function AppInner() {
           <button onClick={() => setWarning(null)} style={styles.dismissBtn} aria-label="Dismiss">✕</button>
         </div>
       )}
-      {showAuthModal && <AuthModal onClose={() => setShowAuthModal(false)} />}
+      {showAuthModal && (
+          <>
+            {guestLimitMessage && (
+              <div style={styles.guestLimitBanner}>{guestLimitMessage}</div>
+            )}
+            <AuthModal onClose={() => { setShowAuthModal(false); setGuestLimitMessage(null); }} />
+          </>
+        )}
       {showPricingModal && (
         <PricingModal
           onClose={() => setShowPricingModal(false)}
@@ -610,6 +651,24 @@ const styles = {
     padding: 0,
     flexShrink: 0,
     opacity: 0.7,
+  },
+  guestLimitBanner: {
+    position: 'fixed',
+    top: '20px',
+    left: '50%',
+    transform: 'translateX(-50%)',
+    zIndex: 60,
+    background: '#FFF7ED',
+    border: '1px solid #FED7AA',
+    borderRadius: '10px',
+    padding: '12px 20px',
+    fontSize: '13px',
+    color: '#92400E',
+    fontWeight: 500,
+    textAlign: 'center',
+    maxWidth: '380px',
+    boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+    whiteSpace: 'nowrap',
   },
   creditToast: {
     position: 'fixed',

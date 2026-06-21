@@ -289,10 +289,13 @@ function DashboardInner({
               disabled={remixing}
               style={{
                 ...styles.ctrlBtn,
+                opacity: isAuthenticated ? 1 : 0.5,
                 animation: remixing ? 'pulse 1s ease-in-out infinite' : 'none',
               }}
               aria-label="Generate a fresh perspective on this data"
-              title="Regenerate this dashboard — reruns the AI analysis on the same document."
+              title={isAuthenticated
+                ? 'Regenerate this dashboard — reruns the AI analysis on the same document.'
+                : 'Sign in to remix dashboards'}
             >
               🔀 {remixing ? 'Remixing…' : 'Remix'}
             </button>
