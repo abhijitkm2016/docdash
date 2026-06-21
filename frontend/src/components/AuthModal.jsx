@@ -30,8 +30,12 @@ export default function AuthModal({ onClose }) {
                 },
               },
             },
+            style: {
+              button: { borderRadius: '8px' },
+              anchor: { color: '#2563EB' },
+            },
           }}
-          providers={[]}
+          providers={['google']}
           redirectTo={window.location.origin}
           magicLink={true}
         />
