@@ -24,6 +24,15 @@ export function useCredits() {
         .select()
         .single()
       setCredits(newCredits)
+      // Record free tier transaction (fire-and-forget — never block the UI)
+      supabase.from('transactions').insert({
+        user_id: user.id,
+        transaction_type: 'free_tier',
+        plan_id: 'free',
+        credits_delta: 5,
+        currency: 'INR',
+        description: 'Welcome — 5 free credits on signup'
+      }).then(() => {})
     } else {
       setCredits(data)
     }
@@ -32,7 +41,7 @@ export function useCredits() {
 
   useEffect(() => { fetchCredits() }, [fetchCredits])
 
-  const deductCredit = async () => {
+  const deductCredit = async (description = 'Document generation') => {
     if (!user || !credits) return false
     if (credits.credits_remaining <= 0) return false
     const { data, error } = await supabase
@@ -46,6 +55,13 @@ export function useCredits() {
       .single()
     if (error) return false
     setCredits(data)
+    supabase.from('transactions').insert({
+      user_id: user.id,
+      transaction_type: 'deduction',
+      credits_delta: -1,
+      currency: 'INR',
+      description
+    }).then(() => {})
     return true
   }
 
@@ -60,10 +76,20 @@ export function useCredits() {
       .eq('user_id', user.id)
       .select()
       .single()
-    if (data) setCredits(data)
+    if (data) {
+      setCredits(data)
+      supabase.from('transactions').insert({
+        user_id: user.id,
+        transaction_type: 'restoration',
+        credits_delta: 1,
+        currency: 'INR',
+        description: 'Credit restored — generation failed'
+      }).then(() => {})
+    }
   }
 
-  const addCredits = async (amount, purchaseType) => {
+  // paymentMeta: { amountPaise, paymentId, orderId, planName } — only provided for paid purchases
+  const addCredits = async (amount, purchaseType, paymentMeta = null) => {
     if (!user || !credits) return
     const { data } = await supabase
       .from('credits')
@@ -75,7 +101,22 @@ export function useCredits() {
       .eq('user_id', user.id)
       .select()
       .single()
-    if (data) setCredits(data)
+    if (data) {
+      setCredits(data)
+      if (paymentMeta) {
+        supabase.from('transactions').insert({
+          user_id: user.id,
+          transaction_type: 'purchase',
+          plan_id: purchaseType,
+          credits_delta: amount,
+          amount_paise: paymentMeta.amountPaise,
+          currency: 'INR',
+          razorpay_payment_id: paymentMeta.paymentId,
+          razorpay_order_id: paymentMeta.orderId,
+          description: `${paymentMeta.planName} purchased`
+        }).then(() => {})
+      }
+    }
   }
 
   const redeemPromoCode = async (code) => {
@@ -116,6 +157,17 @@ export function useCredits() {
       .eq('id', promoCode.id)
 
     await addCredits(promoCode.credits_granted, 'promo')
+
+    // Record promo transaction after addCredits (addCredits skips it since no paymentMeta)
+    supabase.from('transactions').insert({
+      user_id: user.id,
+      transaction_type: 'promo',
+      plan_id: 'promo',
+      credits_delta: promoCode.credits_granted,
+      currency: 'INR',
+      promo_code: code.toUpperCase().trim(),
+      description: `Promo code redeemed: ${code.toUpperCase().trim()}`
+    }).then(() => {})
 
     return {
       success: true,

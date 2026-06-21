@@ -72,7 +72,8 @@ router.post('/verify', async (req, res) => {
       success: true,
       credits: plan.credits,
       planName: plan.name,
-      paymentId: razorpay_payment_id
+      paymentId: razorpay_payment_id,
+      orderId: razorpay_order_id
     })
   } catch (error) {
     console.error('Verification failed:', error)

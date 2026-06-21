@@ -92,7 +92,12 @@ export default function PricingModal({ onClose, onSuccess }) {
           })
           const verifyData = await verifyRes.json()
           if (verifyData.success) {
-            await addCredits(verifyData.credits, plan.id)
+            await addCredits(verifyData.credits, plan.id, {
+              amountPaise: orderData.amount,
+              paymentId: verifyData.paymentId,
+              orderId: verifyData.orderId,
+              planName: plan.name
+            })
             onSuccess(verifyData.credits, plan.name)
             onClose()
           }

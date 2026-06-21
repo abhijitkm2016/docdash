@@ -16,6 +16,7 @@ import WelcomeScreen    from './components/WelcomeScreen';
 import GuestBanner      from './components/GuestBanner';
 import PricingModal     from './components/PricingModal';
 import RemixPopover     from './components/RemixPopover';
+import PurchaseHistory  from './components/PurchaseHistory';
 
 function detectErrorType(msg) {
   if (!msg) return 'generic';
@@ -61,6 +62,7 @@ function AppInner() {
   const [isSample,          setIsSample]          = useState(false);
   const [showAuthModal,     setShowAuthModal]     = useState(false);
   const [showHistory,       setShowHistory]       = useState(false);
+  const [historyTab,        setHistoryTab]        = useState('documents');
   const [isLoading,         setIsLoading]         = useState(false);
   const [guestMode,         setGuestMode]         = useState(false);
   const [showPricingModal,  setShowPricingModal]  = useState(false);
@@ -88,7 +90,7 @@ function AppInner() {
 
     // Deduct credit after successful generation
     if (user) {
-      await deductCredit();
+      await deductCredit(fileName || 'Document generation');
     }
   }
 
@@ -124,14 +126,14 @@ function AppInner() {
     setIsLoading(false);
   }
 
-  async function doRemix(endpoint, extraBody = {}) {
+  async function doRemix(endpoint, extraBody = {}, description = 'Remix') {
     if (!sessionId || remixLoading) return;
     if (!user) { setShowAuthModal(true); return; }
     if (credits && credits.credits_remaining <= 0) { setShowPricingModal(true); return; }
 
     setRemixLoading(true);
     setError(null);
-    await deductCredit();
+    await deductCredit(description);
 
     let success = false;
     try {
@@ -163,8 +165,14 @@ function AppInner() {
     }
   }
 
-  function handleAutoRemix() { doRemix('auto'); }
-  function handleGuidedRemix(instructions) { doRemix('guided', { instructions }); }
+  function handleAutoRemix() { doRemix('auto', {}, 'Auto Remix'); }
+  function handleGuidedRemix(instructions) {
+    doRemix(
+      'guided',
+      { instructions },
+      `Guided Remix${instructions ? ': ' + instructions.slice(0, 40) : ''}`
+    );
+  }
 
   async function handleLoadFromHistory(docId) {
     const doc = await loadDocument(docId);
@@ -285,21 +293,53 @@ function AppInner() {
         {/* History sidebar */}
         {showHistory && (
           <div style={styles.sidebar}>
-            <div style={styles.sidebarHeader}>
-              <span style={styles.sidebarTitle}>Document History</span>
-              <button onClick={() => setShowHistory(false)} style={styles.sidebarClose}>×</button>
+            {/* Tab header */}
+            <div style={{ flexShrink: 0, borderBottom: '1px solid #E2E8F0' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '4px 8px 0 16px' }}>
+                <div style={{ display: 'flex' }}>
+                  {[
+                    { key: 'documents', label: 'Documents' },
+                    { key: 'credits',   label: 'Credits & Usage' },
+                  ].map(tab => (
+                    <button
+                      key={tab.key}
+                      onClick={() => setHistoryTab(tab.key)}
+                      style={{
+                        padding: '10px 10px',
+                        fontSize: '12px',
+                        background: 'none',
+                        border: 'none',
+                        borderBottom: historyTab === tab.key ? '2px solid #2563EB' : '2px solid transparent',
+                        color: historyTab === tab.key ? '#2563EB' : '#94A3B8',
+                        fontWeight: historyTab === tab.key ? 600 : 400,
+                        cursor: 'pointer',
+                        fontFamily: 'inherit',
+                        marginBottom: '-1px',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      {tab.label}
+                    </button>
+                  ))}
+                </div>
+                <button onClick={() => setShowHistory(false)} style={styles.sidebarClose}>×</button>
+              </div>
             </div>
             {user ? (
               <div style={{ overflowY: 'auto', flex: 1 }}>
-                <DocumentHistory
-                  onLoadDocument={handleLoadFromHistory}
-                  currentDocumentId={currentDocumentId}
-                />
+                {historyTab === 'documents' ? (
+                  <DocumentHistory
+                    onLoadDocument={handleLoadFromHistory}
+                    currentDocumentId={currentDocumentId}
+                  />
+                ) : (
+                  <PurchaseHistory />
+                )}
               </div>
             ) : (
               <div style={{ padding: '20px' }}>
                 <p style={{ fontSize: '13px', color: '#94A3B8', margin: '0 0 12px' }}>
-                  Sign in to access your document history.
+                  Sign in to access your history.
                 </p>
                 <button onClick={() => { setShowAuthModal(true); setShowHistory(false); }} style={styles.signInBtn}>
                   Sign in
