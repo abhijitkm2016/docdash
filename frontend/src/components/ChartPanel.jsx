@@ -97,34 +97,35 @@ function ExecutiveTooltip({ active, payload, label, fieldMeta }) {
 
 const tooltipStyles = {
   wrap: {
-    background:   '#0F1117',
-    border:       '1px solid #2D3142',
-    borderRadius: '0.5rem',
-    padding:      '0.625rem 0.875rem',
+    background:   '#1E293B',
+    border:       '1px solid #334155',
+    borderRadius: '8px',
+    padding:      '10px',
     maxWidth:     250,
     boxShadow:    '0 4px 16px rgba(0,0,0,0.55)',
     pointerEvents: 'none',
   },
   category: {
-    fontSize:     '0.6875rem',
-    color:        '#5F6368',
+    fontSize:     '12px',
+    fontWeight:   600,
+    color:        '#F8FAFC',
     marginBottom: '0.2rem',
     letterSpacing: '0.02em',
   },
   metric: {
-    fontSize:   '0.875rem',
-    fontWeight: 600,
-    color:      '#9AA0A6',
+    fontSize:   '12px',
+    fontWeight: 400,
+    color:      '#CBD5E1',
     margin:     0,
     lineHeight: 1.4,
   },
   value: {
-    color:      '#E8EAED',
+    color:      '#F8FAFC',
     fontWeight: 700,
   },
   context: {
     fontSize:   '0.75rem',
-    color:      '#9AA0A6',
+    color:      '#94A3B8',
     lineHeight: 1.5,
     marginTop:  '0.375rem',
     marginBottom: 0,
@@ -229,7 +230,8 @@ export default function ChartPanel({ chart, annotations = [], fieldMeta = {} }) 
     });
   }
 
-  const axisTickStyle = { fill: '#64748B', fontSize: 11 };
+  const FONT_FAMILY = "-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', sans-serif";
+  const axisTickStyle = { fill: '#64748B', fontSize: 11, fontFamily: FONT_FAMILY, fontWeight: 400 };
   const gridProps     = { stroke: '#F1F5F9', strokeDasharray: '3 3' };
 
   // Build ReferenceDot elements for this chart's annotations
@@ -321,7 +323,7 @@ export default function ChartPanel({ chart, annotations = [], fieldMeta = {} }) 
             >
               <CartesianGrid {...gridProps} horizontal={false} />
               <XAxis type="number" tick={axisTickStyle} />
-              <YAxis type="category" dataKey={chart.dataKey} tick={{ ...axisTickStyle, fontSize: 10 }} width={120} />
+              <YAxis type="category" dataKey={chart.dataKey} tick={{ ...axisTickStyle, fontSize: 10, fontFamily: FONT_FAMILY }} width={120} />
               <Tooltip content={props => <ExecutiveTooltip {...props} fieldMeta={fieldMeta} />} />
               <Bar dataKey={chart.valueKey} radius={[0, 4, 4, 0]}>
                 {sortedData.map((_, i) => (
