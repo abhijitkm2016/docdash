@@ -8,6 +8,18 @@ import AuthModal        from './components/AuthModal';
 import DocumentHistory  from './components/DocumentHistory';
 import ShareButton      from './components/ShareButton';
 import SharedView       from './components/SharedView';
+import LoadingState     from './components/LoadingState';
+import ErrorState       from './components/ErrorState';
+
+function detectErrorType(msg) {
+  if (!msg) return 'generic';
+  const m = msg.toLowerCase();
+  if (m.includes('10mb') || m.includes('too large') || m.includes('413') || m.includes('size limit') || m.includes('exceeds')) return 'filesize';
+  if (m.includes('failed to fetch') || m.includes('networkerror') || m.includes('network') || m.includes('connection')) return 'network';
+  if (m.includes('timed out') || m.includes('claude') || m.includes('server error 5') || m.includes('processing') || m.includes('analysis')) return 'processing';
+  if (m.includes('upload') || m.includes('unsupported') || m.includes('parse') || m.includes("couldn't read")) return 'upload';
+  return 'generic';
+}
 
 // ── Shared route — check before anything else ─────────────────────────────────
 function SharedRoute() {
@@ -41,6 +53,7 @@ function AppInner() {
   const [isSample,          setIsSample]          = useState(false);
   const [showAuthModal,     setShowAuthModal]     = useState(false);
   const [showHistory,       setShowHistory]       = useState(false);
+  const [isLoading,         setIsLoading]         = useState(false);
 
   async function handleResult(data, fileName) {
     setResult(data);
@@ -72,6 +85,7 @@ function AppInner() {
     setWarning(null);
     setIsSample(false);
     setShowHistory(false);
+    setIsLoading(false);
   }
 
   async function handleRemix() {
@@ -244,21 +258,34 @@ function AppInner() {
         </div>
       </div>
 
-      <FileUpload
-        onResult={handleResult}
-        onError={setError}
-        onWarning={setWarning}
-        onSampleLoad={() => setIsSample(true)}
-      />
+      {/* Loading overlay — shown while Claude processes */}
+      {isLoading && <LoadingState />}
+
+      {/* Error state — shown when something goes wrong */}
+      {!isLoading && error && (
+        <ErrorState
+          errorType={detectErrorType(error)}
+          message={error}
+          onRetry={() => setError(null)}
+          onReset={handleReset}
+        />
+      )}
+
+      {/* FileUpload — always mounted to preserve file list state; hidden when loading or error */}
+      <div style={{ display: isLoading || error ? 'none' : undefined }}>
+        <FileUpload
+          onResult={handleResult}
+          onError={setError}
+          onWarning={setWarning}
+          onSampleLoad={() => setIsSample(true)}
+          onLoadingChange={setIsLoading}
+        />
+      </div>
+
       {warning && (
         <div style={styles.warningBanner} role="status">
           ⚠ {warning}
           <button onClick={() => setWarning(null)} style={styles.dismissBtn} aria-label="Dismiss">✕</button>
-        </div>
-      )}
-      {error && (
-        <div style={styles.errorBanner} role="alert">
-          <strong>Error:</strong> {error}
         </div>
       )}
       {showAuthModal && <AuthModal onClose={() => setShowAuthModal(false)} />}

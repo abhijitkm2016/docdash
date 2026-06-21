@@ -54,7 +54,7 @@ function truncateName(name, max = 42) {
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────
-export default function FileUpload({ onResult, onError, onWarning, onSampleLoad }) {
+export default function FileUpload({ onResult, onError, onWarning, onSampleLoad, onLoadingChange }) {
   const [files,       setFiles]       = useState([]);   // File[]
   const [dragging,    setDragging]    = useState(false);
   const [loading,     setLoading]     = useState(false);
@@ -97,6 +97,7 @@ export default function FileUpload({ onResult, onError, onWarning, onSampleLoad 
   // Core SSE fetch — accepts a ready FormData
   async function runAnalysis(formData) {
     setLoading(true);
+    onLoadingChange?.(true);
     setProgress('Uploading…');
     onError(null);
 
@@ -153,6 +154,7 @@ export default function FileUpload({ onResult, onError, onWarning, onSampleLoad 
           } else if (eventType === 'result') {
             gotResult = true;
             clearInterval(elapsedTimer);
+            onLoadingChange?.(false);
             if (data.truncated) {
               onWarning?.('Large document condensed for analysis — results reflect the full document\'s structure.');
             }
@@ -171,12 +173,18 @@ export default function FileUpload({ onResult, onError, onWarning, onSampleLoad 
       clearInterval(elapsedTimer);
       onError(err.message);
       setLoading(false);
+      onLoadingChange?.(false);
     }
   }
 
   // Change 5 — generation triggered explicitly
   async function handleGenerate() {
     if (!files.length || loading) return;
+    const oversized = files.find(f => f.size > 10 * 1024 * 1024);
+    if (oversized) {
+      onError(`File "${oversized.name}" exceeds the 10MB limit. Please upload a smaller file.`);
+      return;
+    }
     const formData = new FormData();
     files.forEach(f => formData.append('files', f));
     if (context.trim()) formData.append('context', context.trim());
