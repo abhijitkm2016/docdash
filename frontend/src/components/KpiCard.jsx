@@ -38,12 +38,13 @@ const styles = {
   card: {
     background: 'var(--card-bg)',
     borderRadius: '0.75rem',
-    padding: '1.25rem',
+    padding: '20px 18px',
     border: '1px solid var(--card-border)',
     boxShadow: 'var(--shadow)',
     display: 'flex',
     flexDirection: 'column',
     gap: '0.375rem',
+    minWidth: '180px',
   },
   label: {
     fontSize: '0.75rem',
@@ -59,7 +60,7 @@ const styles = {
     flexWrap: 'wrap',
   },
   value: {
-    fontSize: '1.625rem',
+    fontSize: 'clamp(22px, 2.5vw, 32px)',
     fontWeight: 700,
     lineHeight: 1.1,
   },

@@ -156,7 +156,7 @@ title: neutral analytical format — [Subject] — [Document Type] ([Date Range]
 standfirst: one sentence, complements title without repeating it.
 summary bullet 1: THE primary finding — SCR-framed, written as a complete insight sentence.
   NEVER prefix with "Primary finding:", "Key finding:", "Main insight:" or any label.
-kpis: 3–6 only; soWhat mandatory; nowWhat only if clear action implied.
+kpis: Extract between 3 and 5 key metrics only. Choose the most impactful ones. Never return more than 5 metrics regardless of how many are available in the document. soWhat mandatory; nowWhat only if clear action implied.
 dimensions: only what data actually contains; max 4.
 charts: 2–4 max; titles state insights not metric names; data values numeric; ≥3 points each.
 

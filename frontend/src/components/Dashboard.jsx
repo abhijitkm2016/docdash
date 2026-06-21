@@ -336,7 +336,7 @@ function DashboardInner({
       {/* ── KPI Strip ─────────────────────────────────────────── */}
       <Section title="Key Metrics">
         <div style={styles.kpiGrid}>
-          {(data.kpis || []).map((kpi, i) => (
+          {(data.kpis || []).slice(0, 5).map((kpi, i) => (
             <KpiCard key={i} {...kpi} />
           ))}
         </div>
@@ -537,8 +537,9 @@ const styles = {
 
   kpiGrid: {
     display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
-    gap: '1rem',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+    maxWidth: '100%',
+    gap: '12px',
   },
   chartsGrid: {
     display: 'grid',
