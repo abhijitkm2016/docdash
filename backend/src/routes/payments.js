@@ -3,10 +3,16 @@ const Razorpay = require('razorpay')
 const crypto = require('crypto')
 const router = express.Router()
 
-const razorpay = new Razorpay({
-  key_id: process.env.RAZORPAY_KEY_ID,
-  key_secret: process.env.RAZORPAY_KEY_SECRET
-})
+let _razorpay = null
+function getRazorpay() {
+  if (!_razorpay) {
+    _razorpay = new Razorpay({
+      key_id: process.env.RAZORPAY_KEY_ID,
+      key_secret: process.env.RAZORPAY_KEY_SECRET,
+    })
+  }
+  return _razorpay
+}
 
 const PLANS = {
   per_gen: { amount: 5900, credits: 1, name: 'Per Generation' },
@@ -21,7 +27,7 @@ router.post('/create-order', async (req, res) => {
     const plan = PLANS[planId]
     if (!plan) return res.status(400).json({ error: 'Invalid plan' })
 
-    const order = await razorpay.orders.create({
+    const order = await getRazorpay().orders.create({
       amount: plan.amount,
       currency: 'INR',
       receipt: `docdash_${Date.now()}`,
