@@ -54,7 +54,7 @@ function truncateName(name, max = 42) {
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────
-export default function FileUpload({ onResult, onError, onWarning, onSampleLoad, onLoadingChange }) {
+export default function FileUpload({ onResult, onError, onWarning, onSampleLoad, onLoadingChange, onBeforeProcess }) {
   const [files,       setFiles]       = useState([]);   // File[]
   const [dragging,    setDragging]    = useState(false);
   const [loading,     setLoading]     = useState(false);
@@ -184,6 +184,11 @@ export default function FileUpload({ onResult, onError, onWarning, onSampleLoad,
       onError(`File "${oversized.name}" exceeds the 10MB limit. Please upload a smaller file.`);
       return;
     }
+    // Credit/guest gate — must run before loading state so modal can appear cleanly
+    if (onBeforeProcess) {
+      const allowed = await onBeforeProcess();
+      if (!allowed) return;
+    }
     // Set loading state first — before building formData or awaiting anything
     setLoading(true);
     onLoadingChange?.(true);
@@ -196,6 +201,11 @@ export default function FileUpload({ onResult, onError, onWarning, onSampleLoad,
   // Sample document — send as CSV so backend fileFilter and fileParser both accept it
   async function handleSampleClick() {
     if (loading) return;
+    // Credit/guest gate
+    if (onBeforeProcess) {
+      const allowed = await onBeforeProcess();
+      if (!allowed) return;
+    }
     // Set loading state as the very first thing — before onSampleLoad or any
     // other state update — so React flushes isLoading=true before the fetch starts
     setLoading(true);

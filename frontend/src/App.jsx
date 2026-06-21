@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { ThemeProvider } from './context/ThemeContext';
 import { useAuth } from './contexts/AuthContext';
 import { useDocuments } from './hooks/useDocuments';
+import { useCredits } from './hooks/useCredits';
 import FileUpload       from './components/FileUpload';
 import Dashboard        from './components/Dashboard';
 import AuthModal        from './components/AuthModal';
@@ -12,6 +13,7 @@ import LoadingState     from './components/LoadingState';
 import ErrorState       from './components/ErrorState';
 import WelcomeScreen    from './components/WelcomeScreen';
 import GuestBanner      from './components/GuestBanner';
+import PricingModal     from './components/PricingModal';
 
 function detectErrorType(msg) {
   if (!msg) return 'generic';
@@ -42,6 +44,7 @@ function AppInner() {
 
   const { user, signOut, loading: authLoading } = useAuth();
   const { saveDocument, loadDocument } = useDocuments();
+  const { credits, deductCredit } = useCredits();
 
   const [result,            setResult]            = useState(null);
   const [sessionId,         setSessionId]         = useState(null);
@@ -57,6 +60,8 @@ function AppInner() {
   const [showHistory,       setShowHistory]       = useState(false);
   const [isLoading,         setIsLoading]         = useState(false);
   const [guestMode,         setGuestMode]         = useState(false);
+  const [showPricingModal,  setShowPricingModal]  = useState(false);
+  const [creditSuccess,     setCreditSuccess]     = useState(null);
 
   async function handleResult(data, fileName) {
     setResult(data);
@@ -76,6 +81,30 @@ function AppInner() {
       });
       if (saved) setCurrentDocumentId(saved.id);
     }
+
+    // Deduct credit after successful generation
+    if (user) {
+      await deductCredit();
+    }
+  }
+
+  // Called by FileUpload before processing starts — returns false to abort
+  async function handleBeforeProcess() {
+    if (user) {
+      if (!credits || credits.credits_remaining <= 0) {
+        setShowPricingModal(true);
+        return false;
+      }
+      return true;
+    }
+    // Guest: track uploads in localStorage, allow 5 free then force sign-in
+    const guestUploads = parseInt(localStorage.getItem('docdash_guest_uploads') || '0');
+    if (guestUploads >= 5) {
+      setShowAuthModal(true);
+      return false;
+    }
+    localStorage.setItem('docdash_guest_uploads', String(guestUploads + 1));
+    return true;
   }
 
   function handleReset() {
@@ -165,6 +194,15 @@ function AppInner() {
       </button>
       {user ? (
         <>
+          <button
+            onClick={() => setShowPricingModal(true)}
+            style={creditChipStyle}
+            className="no-print"
+            title="Buy more credits"
+          >
+            <span>⚡</span>
+            <span>{credits?.credits_remaining ?? '—'} credits</span>
+          </button>
           <span style={userEmailStyle} title={user.email}>
             {user.email.length > 22 ? user.email.slice(0, 20) + '…' : user.email}
           </span>
@@ -256,6 +294,20 @@ function AppInner() {
         )}
 
         {showAuthModal && <AuthModal onClose={() => setShowAuthModal(false)} />}
+        {showPricingModal && (
+          <PricingModal
+            onClose={() => setShowPricingModal(false)}
+            onSuccess={(amount, planName) => {
+              setCreditSuccess(`${amount} credits added — ${planName}`);
+              setTimeout(() => setCreditSuccess(null), 4000);
+            }}
+          />
+        )}
+        {creditSuccess && (
+          <div style={styles.creditToast}>
+            <span>✓</span> {creditSuccess}
+          </div>
+        )}
       </div>
     );
   }
@@ -270,6 +322,14 @@ function AppInner() {
       <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
         {user ? (
           <>
+            <button
+              onClick={() => setShowPricingModal(true)}
+              style={creditChipStyle}
+              title="Buy more credits"
+            >
+              <span>⚡</span>
+              <span>{credits?.credits_remaining ?? '—'} credits</span>
+            </button>
             <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
               {user.email.length > 28 ? user.email.slice(0, 26) + '…' : user.email}
             </span>
@@ -294,6 +354,20 @@ function AppInner() {
           onContinueAsGuest={() => setGuestMode(true)}
         />
         {showAuthModal && <AuthModal onClose={() => setShowAuthModal(false)} />}
+        {showPricingModal && (
+          <PricingModal
+            onClose={() => setShowPricingModal(false)}
+            onSuccess={(amount, planName) => {
+              setCreditSuccess(`${amount} credits added — ${planName}`);
+              setTimeout(() => setCreditSuccess(null), 4000);
+            }}
+          />
+        )}
+        {creditSuccess && (
+          <div style={styles.creditToast}>
+            <span>✓</span> {creditSuccess}
+          </div>
+        )}
       </>
     );
   }
@@ -324,6 +398,7 @@ function AppInner() {
           onWarning={setWarning}
           onSampleLoad={() => setIsSample(true)}
           onLoadingChange={setIsLoading}
+          onBeforeProcess={handleBeforeProcess}
         />
       </div>
 
@@ -334,6 +409,20 @@ function AppInner() {
         </div>
       )}
       {showAuthModal && <AuthModal onClose={() => setShowAuthModal(false)} />}
+      {showPricingModal && (
+        <PricingModal
+          onClose={() => setShowPricingModal(false)}
+          onSuccess={(amount, planName) => {
+            setCreditSuccess(`${amount} credits added — ${planName}`);
+            setTimeout(() => setCreditSuccess(null), 4000);
+          }}
+        />
+      )}
+      {creditSuccess && (
+        <div style={styles.creditToast}>
+          <span>✓</span> {creditSuccess}
+        </div>
+      )}
     </>
   );
 }
@@ -358,6 +447,22 @@ const navBtnStyle = {
   cursor: 'pointer',
   whiteSpace: 'nowrap',
   fontFamily: 'inherit',
+};
+
+const creditChipStyle = {
+  display: 'flex',
+  alignItems: 'center',
+  gap: '6px',
+  background: '#F8FAFC',
+  border: '1px solid #E2E8F0',
+  borderRadius: '20px',
+  padding: '4px 12px',
+  fontSize: '12px',
+  color: '#475569',
+  fontWeight: 500,
+  cursor: 'pointer',
+  fontFamily: 'inherit',
+  whiteSpace: 'nowrap',
 };
 
 const textLinkStyle = {
@@ -505,5 +610,23 @@ const styles = {
     padding: 0,
     flexShrink: 0,
     opacity: 0.7,
+  },
+  creditToast: {
+    position: 'fixed',
+    bottom: '24px',
+    left: '50%',
+    transform: 'translateX(-50%)',
+    zIndex: 100,
+    background: '#0F172A',
+    color: '#fff',
+    padding: '12px 24px',
+    borderRadius: '10px',
+    fontSize: '13px',
+    fontWeight: 500,
+    boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    whiteSpace: 'nowrap',
   },
 };
