@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { FilterProvider, useFilter } from '../context/FilterContext';
+import AuthGate from './AuthGate';
 import { useTheme } from '../context/ThemeContext';
 import KpiCard          from './KpiCard';
 import ChartPanel       from './ChartPanel';
@@ -72,14 +73,20 @@ const modalStyles = {
 };
 
 // ── Export dropdown (Print/PDF + Download) ────────────────────────────────────
-function ExportButton({ standaloneHtml, title }) {
-  const [open, setOpen] = useState(false);
+function ExportButton({ standaloneHtml, title, isAuthenticated, onRequestSignIn }) {
+  const [open,     setOpen]     = useState(false);
+  const [showGate, setShowGate] = useState(false);
   const ref = useRef(null);
 
   useEffect(() => {
-    function onClick(e) { if (ref.current && !ref.current.contains(e.target)) setOpen(false); }
-    document.addEventListener('mousedown', onClick);
-    return () => document.removeEventListener('mousedown', onClick);
+    function handler(e) {
+      if (ref.current && !ref.current.contains(e.target)) {
+        setOpen(false);
+        setShowGate(false);
+      }
+    }
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
   }, []);
 
   function download() {
@@ -93,17 +100,32 @@ function ExportButton({ standaloneHtml, title }) {
     setOpen(false);
   }
 
+  function handleClick() {
+    if (!isAuthenticated) {
+      setShowGate(o => !o);
+    } else {
+      setOpen(o => !o);
+    }
+  }
+
   return (
     <div ref={ref} style={{ position: 'relative' }} className="no-print">
       <button
         style={exportStyles.btn}
-        onClick={() => setOpen(o => !o)}
+        onClick={handleClick}
         aria-haspopup="true"
-        aria-expanded={open}
+        aria-expanded={open || showGate}
       >
         ⬇ Export
       </button>
-      {open && (
+      {showGate && (
+        <AuthGate
+          action="export"
+          onSignIn={() => { setShowGate(false); onRequestSignIn?.(); }}
+          onDismiss={() => setShowGate(false)}
+        />
+      )}
+      {isAuthenticated && open && (
         <div style={exportStyles.dropdown}>
           <button style={exportStyles.item} onClick={() => { window.print(); setOpen(false); }}>
             🖨 Print / PDF
@@ -221,6 +243,7 @@ function DashboardInner({
   data, standaloneHtml, sessionId,
   onReset, onRemix, remixing, remixVersion,
   authControls, shareButton, readOnly,
+  isAuthenticated, onRequestSignIn,
 }) {
   const [showPrivacy, setShowPrivacy] = useState(false);
   const dimensions       = data.dimensions       || [];
@@ -253,7 +276,12 @@ function DashboardInner({
           {shareButton}
           <ThemeToggle />
           {!readOnly && (
-            <ExportButton standaloneHtml={standaloneHtml} title={data.title} />
+            <ExportButton
+              standaloneHtml={standaloneHtml}
+              title={data.title}
+              isAuthenticated={isAuthenticated}
+              onRequestSignIn={onRequestSignIn}
+            />
           )}
           {!readOnly && (
             <button

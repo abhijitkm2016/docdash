@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { ThemeProvider } from './context/ThemeContext';
 import { useAuth } from './contexts/AuthContext';
 import { useDocuments } from './hooks/useDocuments';
@@ -10,6 +10,8 @@ import ShareButton      from './components/ShareButton';
 import SharedView       from './components/SharedView';
 import LoadingState     from './components/LoadingState';
 import ErrorState       from './components/ErrorState';
+import WelcomeScreen    from './components/WelcomeScreen';
+import GuestBanner      from './components/GuestBanner';
 
 function detectErrorType(msg) {
   if (!msg) return 'generic';
@@ -38,7 +40,7 @@ function AppInner() {
     return <SharedView shareToken={pathParts[2]} />;
   }
 
-  const { user, signOut } = useAuth();
+  const { user, signOut, loading: authLoading } = useAuth();
   const { saveDocument, loadDocument } = useDocuments();
 
   const [result,            setResult]            = useState(null);
@@ -54,6 +56,7 @@ function AppInner() {
   const [showAuthModal,     setShowAuthModal]     = useState(false);
   const [showHistory,       setShowHistory]       = useState(false);
   const [isLoading,         setIsLoading]         = useState(false);
+  const [guestMode,         setGuestMode]         = useState(false);
 
   async function handleResult(data, fileName) {
     setResult(data);
@@ -128,6 +131,27 @@ function AppInner() {
     setShowHistory(false);
   }
 
+  // ── Mid-session save: fires when user signs in with a dashboard already open ─
+  const prevUserIdRef = useRef(user?.id ?? null);
+  useEffect(() => {
+    const prevUserId = prevUserIdRef.current;
+    prevUserIdRef.current = user?.id ?? null;
+
+    if (user) setGuestMode(false);
+
+    // User just signed in (transitioned from null → non-null)
+    if (user && !prevUserId && result?.dashboardData && !currentDocumentId) {
+      saveDocument({
+        fileName:      currentFileName || 'document',
+        title:         result.dashboardData.title || currentFileName || 'document',
+        dashboardData: result.dashboardData,
+      }).then(saved => {
+        if (saved) setCurrentDocumentId(saved.id);
+      });
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
+
   // ── Auth controls rendered into Dashboard's navbar ──────────────────────────
   const authControls = (
     <>
@@ -161,20 +185,11 @@ function AppInner() {
   );
 
   if (result) {
-    const showNudge = !user && !isSample;
     return (
       <div key={animKey} style={{ animation: 'fadeInUp 0.35s ease' }}>
         {isSample && (
           <div style={styles.sampleBanner}>
             Viewing sample document — upload your own file to analyse it
-          </div>
-        )}
-        {showNudge && (
-          <div style={styles.nudgeBanner}>
-            Sign in to save this dashboard and access it later.{' '}
-            <button onClick={() => setShowAuthModal(true)} style={styles.nudgeLink}>
-              Sign in
-            </button>
           </div>
         )}
 
@@ -214,8 +229,19 @@ function AppInner() {
           remixing={remixing}
           remixVersion={remixVersion}
           authControls={authControls}
-          shareButton={<ShareButton documentId={currentDocumentId} />}
+          shareButton={
+            <ShareButton
+              documentId={currentDocumentId}
+              isAuthenticated={!!user}
+              onRequestSignIn={() => setShowAuthModal(true)}
+            />
+          }
+          isAuthenticated={!!user}
+          onRequestSignIn={() => setShowAuthModal(true)}
         />
+
+        {/* GuestBanner — bottom persistent nudge for non-signed-in users */}
+        {!user && <GuestBanner onSignIn={() => setShowAuthModal(true)} />}
 
         {warning && (
           <div style={styles.warningBanner} role="status">
@@ -234,29 +260,48 @@ function AppInner() {
     );
   }
 
+  // ── Landing auth bar (shared between WelcomeScreen and upload views) ─────────
+  const landingBar = (
+    <div style={styles.landingAuthBar}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+        <span style={{ fontSize: '1rem' }}>⚡</span>
+        <span style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--accent)' }}>DocDash</span>
+      </div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+        {user ? (
+          <>
+            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+              {user.email.length > 28 ? user.email.slice(0, 26) + '…' : user.email}
+            </span>
+            <button onClick={signOut} style={textLinkStyle}>Sign out</button>
+          </>
+        ) : (
+          <button onClick={() => setShowAuthModal(true)} style={navBtnStyle}>
+            Sign in
+          </button>
+        )}
+      </div>
+    </div>
+  );
+
+  // ── WelcomeScreen: logged-out users who haven't chosen guest mode yet ─────────
+  if (!authLoading && !user && !guestMode) {
+    return (
+      <>
+        {landingBar}
+        <WelcomeScreen
+          onSignIn={() => setShowAuthModal(true)}
+          onContinueAsGuest={() => setGuestMode(true)}
+        />
+        {showAuthModal && <AuthModal onClose={() => setShowAuthModal(false)} />}
+      </>
+    );
+  }
+
+  // ── Upload / loading / error view ─────────────────────────────────────────────
   return (
     <>
-      {/* ── Landing page auth bar — always visible ──────────────── */}
-      <div style={styles.landingAuthBar}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-          <span style={{ fontSize: '1rem' }}>⚡</span>
-          <span style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--accent)' }}>DocDash</span>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          {user ? (
-            <>
-              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                {user.email.length > 28 ? user.email.slice(0, 26) + '…' : user.email}
-              </span>
-              <button onClick={signOut} style={textLinkStyle}>Sign out</button>
-            </>
-          ) : (
-            <button onClick={() => setShowAuthModal(true)} style={navBtnStyle}>
-              Sign in
-            </button>
-          )}
-        </div>
-      </div>
+      {landingBar}
 
       {/* Loading overlay — shown while Claude processes */}
       {isLoading && <LoadingState />}
