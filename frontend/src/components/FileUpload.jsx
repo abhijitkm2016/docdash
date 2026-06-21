@@ -107,6 +107,8 @@ export default function FileUpload({ onResult, onError, onWarning }) {
       const decoder = new TextDecoder();
       let buffer = '';
 
+      let gotResult = false;
+
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
@@ -132,6 +134,7 @@ export default function FileUpload({ onResult, onError, onWarning }) {
               startElapsedTicker();
             }
           } else if (eventType === 'result') {
+            gotResult = true;
             clearInterval(elapsedTimer);
             if (data.truncated) {
               onWarning?.('Large document condensed for analysis — results reflect the full document\'s structure.');
@@ -142,6 +145,11 @@ export default function FileUpload({ onResult, onError, onWarning }) {
             throw new Error(data.message);
           }
         }
+      }
+
+      // Stream closed without a result — function timed out or crashed
+      if (!gotResult) {
+        throw new Error('Analysis timed out. The document may be too large or complex. Please try again.');
       }
     } catch (err) {
       clearInterval(elapsedTimer);
