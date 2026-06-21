@@ -23,7 +23,8 @@ export default function WelcomeScreen({ onSignIn, onContinueAsGuest }) {
           fontSize: '15px', color: '#64748B',
           marginBottom: '32px', lineHeight: 1.6
         }}>
-          Turn any document into an executive dashboard — instantly.
+          Turn any document into an executive dashboard. Upload any document. Get KPI cards, charts,
+          and AI analysis — instantly. Then ask questions about your data.
           Sign in to save and share your dashboards, or try it as a guest first.
         </p>
 
@@ -60,8 +61,8 @@ export default function WelcomeScreen({ onSignIn, onContinueAsGuest }) {
         }}>
           {[
             { icon: '⚡', label: 'Instant Dashboard' },
-            { icon: '👥', label: '9-Expert Panel' },
-            { icon: '🔍', label: 'Gap Detection' }
+            { icon: '📊', label: 'Visual Analytics' },
+            { icon: '💬', label: 'Ask Your Data' }
           ].map(f => (
             <div key={f.label} style={{
               display: 'flex', flexDirection: 'column',
