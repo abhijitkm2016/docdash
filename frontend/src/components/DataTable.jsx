@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import { useFilteredRows } from '../hooks/useFilteredData';
 
 export default function DataTable({ columns, rows, dimensions = [] }) {
+  const [open, setOpen]         = useState(false);
   const [search, setSearch]     = useState('');
   const [sortCol, setSortCol]   = useState(-1);
   const [sortDir, setSortDir]   = useState(1);
@@ -34,6 +35,17 @@ export default function DataTable({ columns, rows, dimensions = [] }) {
 
   return (
     <div style={styles.wrap}>
+      <button
+        onClick={() => setOpen(o => !o)}
+        style={{ ...styles.toggle, borderBottom: open ? '1px solid var(--card-border)' : 'none' }}
+        aria-expanded={open}
+      >
+        <span style={styles.toggleIcon}>{open ? '▾' : '▸'}</span>
+        <span style={styles.toggleLabel}>Data Table</span>
+        <span style={styles.toggleMeta}>{rows.length} rows · {columns.length} columns</span>
+      </button>
+
+      <div style={{ display: open ? undefined : 'none' }}>
       <div style={styles.controls}>
         <input
           style={styles.search}
@@ -88,6 +100,7 @@ export default function DataTable({ columns, rows, dimensions = [] }) {
       {displayed.length > 100 && (
         <p style={styles.footer}>Showing first 100 of {displayed.length} rows</p>
       )}
+      </div>
     </div>
   );
 }
@@ -99,6 +112,35 @@ const styles = {
     border: '1px solid var(--card-border)',
     overflow: 'hidden',
     boxShadow: 'var(--shadow)',
+  },
+  toggle: {
+    width: '100%',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '0.5rem',
+    padding: '0.875rem 1rem',
+    background: 'none',
+    border: 'none',
+    cursor: 'pointer',
+    textAlign: 'left',
+  },
+  toggleIcon: {
+    fontSize: '0.75rem',
+    color: 'var(--accent)',
+    flexShrink: 0,
+    width: 12,
+  },
+  toggleLabel: {
+    fontSize: '0.8125rem',
+    fontWeight: 700,
+    color: 'var(--text-primary)',
+    textTransform: 'uppercase',
+    letterSpacing: '0.06em',
+  },
+  toggleMeta: {
+    fontSize: '0.75rem',
+    color: 'var(--text-muted)',
+    marginLeft: 'auto',
   },
   controls: {
     padding: '1rem',
