@@ -281,6 +281,64 @@ function AppInner() {
     </div>
   ) : null;
 
+  // ── History sidebar — position:fixed, renders over any view ─────────────────
+  const historySidebar = showHistory && (
+    <div style={styles.sidebar}>
+      <div style={{ flexShrink: 0, borderBottom: '1px solid #E2E8F0' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '4px 8px 0 16px' }}>
+          <div style={{ display: 'flex' }}>
+            {[
+              { key: 'documents', label: 'Documents' },
+              { key: 'credits',   label: 'Credits & Usage' },
+            ].map(tab => (
+              <button
+                key={tab.key}
+                onClick={() => setHistoryTab(tab.key)}
+                style={{
+                  padding: '10px 10px',
+                  fontSize: '12px',
+                  background: 'none',
+                  border: 'none',
+                  borderBottom: historyTab === tab.key ? '2px solid #2563EB' : '2px solid transparent',
+                  color: historyTab === tab.key ? '#2563EB' : '#94A3B8',
+                  fontWeight: historyTab === tab.key ? 600 : 400,
+                  cursor: 'pointer',
+                  fontFamily: 'inherit',
+                  marginBottom: '-1px',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+          <button onClick={() => setShowHistory(false)} style={styles.sidebarClose}>×</button>
+        </div>
+      </div>
+      {user ? (
+        <div style={{ overflowY: 'auto', flex: 1 }}>
+          {historyTab === 'documents' ? (
+            <DocumentHistory
+              onLoadDocument={handleLoadFromHistory}
+              currentDocumentId={currentDocumentId}
+            />
+          ) : (
+            <PurchaseHistory />
+          )}
+        </div>
+      ) : (
+        <div style={{ padding: '20px' }}>
+          <p style={{ fontSize: '13px', color: '#94A3B8', margin: '0 0 12px' }}>
+            Sign in to access your history.
+          </p>
+          <button onClick={() => { setShowAuthModal(true); setShowHistory(false); }} style={styles.signInBtn}>
+            Sign in
+          </button>
+        </div>
+      )}
+    </div>
+  );
+
   if (result) {
     return (
       <div key={animKey} style={{ animation: 'fadeInUp 0.35s ease' }}>
@@ -290,64 +348,7 @@ function AppInner() {
           </div>
         )}
 
-        {/* History sidebar */}
-        {showHistory && (
-          <div style={styles.sidebar}>
-            {/* Tab header */}
-            <div style={{ flexShrink: 0, borderBottom: '1px solid #E2E8F0' }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '4px 8px 0 16px' }}>
-                <div style={{ display: 'flex' }}>
-                  {[
-                    { key: 'documents', label: 'Documents' },
-                    { key: 'credits',   label: 'Credits & Usage' },
-                  ].map(tab => (
-                    <button
-                      key={tab.key}
-                      onClick={() => setHistoryTab(tab.key)}
-                      style={{
-                        padding: '10px 10px',
-                        fontSize: '12px',
-                        background: 'none',
-                        border: 'none',
-                        borderBottom: historyTab === tab.key ? '2px solid #2563EB' : '2px solid transparent',
-                        color: historyTab === tab.key ? '#2563EB' : '#94A3B8',
-                        fontWeight: historyTab === tab.key ? 600 : 400,
-                        cursor: 'pointer',
-                        fontFamily: 'inherit',
-                        marginBottom: '-1px',
-                        whiteSpace: 'nowrap',
-                      }}
-                    >
-                      {tab.label}
-                    </button>
-                  ))}
-                </div>
-                <button onClick={() => setShowHistory(false)} style={styles.sidebarClose}>×</button>
-              </div>
-            </div>
-            {user ? (
-              <div style={{ overflowY: 'auto', flex: 1 }}>
-                {historyTab === 'documents' ? (
-                  <DocumentHistory
-                    onLoadDocument={handleLoadFromHistory}
-                    currentDocumentId={currentDocumentId}
-                  />
-                ) : (
-                  <PurchaseHistory />
-                )}
-              </div>
-            ) : (
-              <div style={{ padding: '20px' }}>
-                <p style={{ fontSize: '13px', color: '#94A3B8', margin: '0 0 12px' }}>
-                  Sign in to access your history.
-                </p>
-                <button onClick={() => { setShowAuthModal(true); setShowHistory(false); }} style={styles.signInBtn}>
-                  Sign in
-                </button>
-              </div>
-            )}
-          </div>
-        )}
+        {historySidebar}
 
         <Dashboard
           data={result.dashboardData}
@@ -418,6 +419,14 @@ function AppInner() {
         <span style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--accent)' }}>DocDash</span>
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+        {user && (
+          <button
+            onClick={() => setShowHistory(h => !h)}
+            style={{ fontSize: '12px', color: '#64748B', background: 'transparent', border: '1px solid #E2E8F0', borderRadius: '7px', padding: '5px 12px', cursor: 'pointer', fontFamily: 'inherit' }}
+          >
+            📄 History
+          </button>
+        )}
         {user ? (
           <>
             <button
@@ -447,6 +456,7 @@ function AppInner() {
     return (
       <>
         {landingBar}
+        {historySidebar}
         <WelcomeScreen
           onSignIn={() => setShowAuthModal(true)}
           onContinueAsGuest={() => setGuestMode(true)}
@@ -481,6 +491,7 @@ function AppInner() {
   return (
     <>
       {landingBar}
+      {historySidebar}
 
       {/* Loading overlay — shown while Claude processes */}
       {isLoading && <LoadingState />}
