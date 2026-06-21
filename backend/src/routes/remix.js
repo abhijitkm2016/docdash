@@ -1,6 +1,7 @@
 const express = require('express');
-const { analyzeDocument } = require('../services/claudeClient');
-const sessionStore        = require('../services/sessionStore');
+const { analyzeDocument }     = require('../services/claudeClient');
+const { buildStandaloneHtml } = require('../utils/htmlExporter');
+const sessionStore            = require('../services/sessionStore');
 
 const router = express.Router();
 
@@ -19,19 +20,19 @@ router.post('/', async (req, res) => {
   }
 
   try {
-    const html = await analyzeDocument(
+    const dashboardData = await analyzeDocument(
       session.parsedFile,
       session.fileName,
       { remixMode: true }
     );
+    const standaloneHtml = buildStandaloneHtml(dashboardData);
 
-    // Update stored html so Ask Your Data context stays fresh
     await sessionStore.set(sessionId, {
       ...session,
-      html,
+      dashboardData,
     });
 
-    res.json({ html, sessionId });
+    res.json({ dashboardData, standaloneHtml, sessionId });
   } catch (err) {
     console.error('Remix error:', err.message);
     res.status(500).json({ error: err.message || 'Remix failed' });

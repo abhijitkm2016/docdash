@@ -18,9 +18,10 @@ const crypto   = require('crypto');
 const express  = require('express');
 const multer   = require('multer');
 
-const { parseFile }       = require('../backend/src/services/fileParser');
-const { analyzeDocument } = require('../backend/src/services/claudeClient');
-const { condenseText }    = require('../backend/src/utils/condenseText');
+const { parseFile }           = require('../backend/src/services/fileParser');
+const { analyzeDocument }     = require('../backend/src/services/claudeClient');
+const { buildStandaloneHtml } = require('../backend/src/utils/htmlExporter');
+const { condenseText }        = require('../backend/src/utils/condenseText');
 const sessionStore            = require('../backend/src/services/sessionStore');
 
 const upload = multer({
@@ -49,16 +50,11 @@ const upload = multer({
   },
 });
 
-// Minimal Express app — no global body-parser middleware so multer gets
-// the raw multipart stream without interference.
 const app = express();
 
 app.post('*', upload.array('files', 10), async (req, res) => {
   const files = req.files || [];
 
-  // Set SSE headers and flush immediately — Vercel must see the 200 +
-  // content-type before any async work begins, or it will buffer the entire
-  // response and release it only after the function completes (or times out).
   res.setHeader('Content-Type', 'text/event-stream');
   res.setHeader('Cache-Control', 'no-cache');
   res.setHeader('Connection', 'keep-alive');
@@ -73,8 +69,6 @@ app.post('*', upload.array('files', 10), async (req, res) => {
     return res.end();
   }
 
-  // Phase 1 heartbeat — file received, about to parse.
-  // Sent before any async work so Vercel sees activity immediately.
   send('heartbeat', { status: 'received' });
 
   const userContext = (req.body?.context || '').trim();
@@ -84,8 +78,6 @@ app.post('*', upload.array('files', 10), async (req, res) => {
       files.map(f => parseFile(f.buffer, f.originalname))
     );
 
-    // Condense each file individually so Excel/CSV files get tabular stats
-    // even in a multi-file upload (type 'multi' would bypass tabular logic).
     const condensedParsed = parsed.map(p => ({
       ...p,
       text: condenseText(p),
@@ -109,23 +101,21 @@ app.post('*', upload.array('files', 10), async (req, res) => {
       type: parsed.length === 1 ? parsed[0].type : 'multi',
     };
 
-    // Phase 2 heartbeat — parsing done, Claude is now working.
-    // Subsequent interval heartbeats keep the edge connection alive.
     send('heartbeat', { status: 'analysing' });
     const heartbeat = setInterval(() => send('heartbeat', { status: 'analysing' }), 4000);
 
-    const html = await analyzeDocument(combinedParsed, combinedName, { userContext });
+    const dashboardData  = await analyzeDocument(combinedParsed, combinedName, { userContext });
+    const standaloneHtml = buildStandaloneHtml(dashboardData);
 
-    // Store session BEFORE sending result so Ask Your Data is ready immediately
     const sessionId = crypto.randomUUID();
     await sessionStore.set(sessionId, {
-      parsedFile: combinedParsed,
-      fileName:   combinedName,
-      html,
+      parsedFile:    combinedParsed,
+      fileName:      combinedName,
+      dashboardData,
     });
 
     clearInterval(heartbeat);
-    send('result', { html, sessionId, truncated });
+    send('result', { dashboardData, standaloneHtml, sessionId, truncated });
     send('done', {});
     res.end();
   } catch (err) {
@@ -143,7 +133,7 @@ app.post('*', upload.array('files', 10), async (req, res) => {
 module.exports = app;
 module.exports.config = {
   api: {
-    bodyParser:    false,  // multer needs the raw multipart stream
-    responseLimit: false,  // no buffering — stream chunks as they arrive
+    bodyParser:    false,
+    responseLimit: false,
   },
 };
