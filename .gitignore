@@ -31,3 +31,4 @@ sample screenshots/
 
 .vercel
 .env*
+supabase/.temp/
