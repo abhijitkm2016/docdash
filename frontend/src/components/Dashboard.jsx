@@ -220,6 +220,7 @@ function ActiveFilterBar({ dimensions }) {
 function DashboardInner({
   data, standaloneHtml, sessionId,
   onReset, onRemix, remixing, remixVersion,
+  authControls, shareButton, readOnly,
 }) {
   const [showPrivacy, setShowPrivacy] = useState(false);
   const dimensions       = data.dimensions       || [];
@@ -248,20 +249,26 @@ function DashboardInner({
           )}
         </div>
         <div style={styles.controls}>
+          {authControls}
+          {shareButton}
           <ThemeToggle />
-          <ExportButton standaloneHtml={standaloneHtml} title={data.title} />
-          <button
-            onClick={onRemix}
-            disabled={remixing}
-            style={{
-              ...styles.ctrlBtn,
-              animation: remixing ? 'pulse 1s ease-in-out infinite' : 'none',
-            }}
-            aria-label="Generate a fresh perspective on this data"
-            title="Regenerate this dashboard — reruns the AI analysis on the same document."
-          >
-            🔀 {remixing ? 'Remixing…' : 'Remix'}
-          </button>
+          {!readOnly && (
+            <ExportButton standaloneHtml={standaloneHtml} title={data.title} />
+          )}
+          {!readOnly && (
+            <button
+              onClick={onRemix}
+              disabled={remixing}
+              style={{
+                ...styles.ctrlBtn,
+                animation: remixing ? 'pulse 1s ease-in-out infinite' : 'none',
+              }}
+              aria-label="Generate a fresh perspective on this data"
+              title="Regenerate this dashboard — reruns the AI analysis on the same document."
+            >
+              🔀 {remixing ? 'Remixing…' : 'Remix'}
+            </button>
+          )}
           <button
             onClick={() => setShowPrivacy(true)}
             style={styles.privacyLink}
@@ -269,9 +276,11 @@ function DashboardInner({
           >
             ℹ Data &amp; Privacy
           </button>
-          <button onClick={onReset} style={styles.primaryBtn}>
-            ↑ New File
-          </button>
+          {!readOnly && (
+            <button onClick={onReset} style={styles.primaryBtn}>
+              ↑ New File
+            </button>
+          )}
         </div>
       </div>
 
