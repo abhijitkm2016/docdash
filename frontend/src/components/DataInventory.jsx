@@ -9,8 +9,11 @@ export default function DataInventory({ inventory, metadata }) {
   const hasContent = sources.length || joins.length || gaps.length || ignoredColumns.length || unexposedDimensions.length;
   if (!hasContent) return null;
 
+  const gapCount = gaps.length;
+
   return (
     <div style={styles.wrap}>
+      {/* Toggle header */}
       <button
         className="no-print"
         onClick={() => setOpen(o => !o)}
@@ -18,80 +21,99 @@ export default function DataInventory({ inventory, metadata }) {
         aria-expanded={open}
         aria-label="Toggle data inventory"
       >
-        <span style={styles.toggleIcon}>{open ? '▾' : '▸'}</span>
-        <span style={styles.toggleLabel}>Data Inventory</span>
-        <span style={styles.toggleMeta}>
-          {sources.length} source{sources.length !== 1 ? 's' : ''}
-          {joins.length ? ` · ${joins.length} join${joins.length !== 1 ? 's' : ''}` : ''}
-          {gaps.length ? ` · ${gaps.length} gap${gaps.length !== 1 ? 's' : ''}` : ''}
-        </span>
+        <span style={{
+          ...styles.toggleIcon,
+          transform: open ? 'rotate(90deg)' : 'rotate(0deg)',
+          transition: 'transform 0.2s ease',
+        }}>▸</span>
+        <span style={styles.toggleLabel}>DATA INVENTORY</span>
+        {gapCount > 0 && (
+          <span style={styles.gapBadge}>
+            {sources.length} source{sources.length !== 1 ? 's' : ''} · {gapCount} gap{gapCount !== 1 ? 's' : ''}
+          </span>
+        )}
+        {!gapCount && (
+          <span style={styles.toggleMeta}>
+            {sources.length} source{sources.length !== 1 ? 's' : ''}
+            {joins.length ? ` · ${joins.length} join${joins.length !== 1 ? 's' : ''}` : ''}
+          </span>
+        )}
       </button>
 
-      {/* print-expand forces this open when printing */}
-      <div
-        className={open ? 'print-expand' : 'print-expand'}
-        style={{ ...styles.body, ...(open ? {} : styles.bodyCollapsed) }}
-      >
+      {/* Body */}
+      <div style={{ ...styles.body, ...(open ? {} : styles.bodyCollapsed) }}>
+
+        {/* Sources */}
         {sources.length > 0 && (
           <InventorySection title="Sources">
             {sources.map((s, i) => (
-              <Row key={i}>
-                <Tag>{s.file}</Tag>
-                {s.sheet && <span style={styles.arrow}>→</span>}
-                {s.sheet && <Tag dim>{s.sheet}</Tag>}
+              <div key={i} style={styles.sourceRow}>
+                <span style={styles.sourcePill}>{s.file}</span>
+                <span style={styles.sourceArrow}>→</span>
+                <span style={styles.sourceType}>
+                  {s.sheet || 'N/A — single document'}
+                </span>
                 {s.columns?.length > 0 && (
                   <span style={styles.colList}>{s.columns.join(', ')}</span>
                 )}
-              </Row>
+              </div>
             ))}
           </InventorySection>
         )}
 
+        {/* Joins */}
         {joins.length > 0 && (
           <InventorySection title="Joins">
             {joins.map((j, i) => (
-              <Row key={i}>
-                <Tag accent>{j.type}</Tag>
-                <span style={styles.joinKeys}>on {(j.keys || []).join(', ')}</span>
-                {j.description && <span style={styles.dim}> — {j.description}</span>}
-              </Row>
+              <div key={i} style={styles.sourceRow}>
+                <span style={styles.joinTag}>{j.type}</span>
+                <span style={styles.sourceArrow}>on {(j.keys || []).join(', ')}</span>
+                {j.description && <span style={styles.dimText}> — {j.description}</span>}
+              </div>
             ))}
           </InventorySection>
         )}
 
+        {/* Data Gaps */}
         {gaps.length > 0 && (
           <InventorySection title="Data Gaps">
             {gaps.map((g, i) => (
-              <Row key={i}>
-                <span style={styles.gapIcon}>⚠</span>
+              <div key={i} style={styles.gapCard}>
+                <span style={styles.gapWarningBadge}>⚠</span>
                 <span style={styles.gapText}>{g}</span>
-              </Row>
+              </div>
             ))}
+            <p style={styles.gapFootnote}>
+              Gaps indicate data that could strengthen this analysis if added to the source document.
+            </p>
           </InventorySection>
         )}
 
+        {/* Ignored Columns */}
         {ignoredColumns.length > 0 && (
           <InventorySection title="Ignored Columns">
             {ignoredColumns.map((c, i) => (
-              <Row key={i}>
-                <Tag dim>{c.column}</Tag>
-                <span style={styles.dim}>{c.reason}</span>
-              </Row>
+              <div key={i} style={styles.sourceRow}>
+                <span style={styles.dimTag}>{c.column}</span>
+                <span style={styles.dimText}>{c.reason}</span>
+              </div>
             ))}
           </InventorySection>
         )}
 
+        {/* Unexposed Dimensions */}
         {unexposedDimensions.length > 0 && (
           <InventorySection title="Detected but Not Exposed">
             {unexposedDimensions.map((d, i) => (
-              <Row key={i}>
-                <Tag dim>{d.dimension}</Tag>
-                <span style={styles.dim}>{d.reason}</span>
-              </Row>
+              <div key={i} style={styles.sourceRow}>
+                <span style={styles.dimTag}>{d.dimension}</span>
+                <span style={styles.dimText}>{d.reason}</span>
+              </div>
             ))}
           </InventorySection>
         )}
 
+        {/* Footer metadata */}
         {metadata && (
           <div style={styles.footer}>
             {metadata.source && <span>Source: {metadata.source}</span>}
@@ -111,44 +133,23 @@ export default function DataInventory({ inventory, metadata }) {
 
 function InventorySection({ title, children }) {
   return (
-    <div style={{ marginBottom: '1rem' }}>
-      <p style={{
-        fontSize: '0.6875rem',
-        fontWeight: 700,
-        color: 'var(--text-muted)',
-        textTransform: 'uppercase',
-        letterSpacing: '0.08em',
-        marginBottom: '0.5rem',
-      }}>{title}</p>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem' }}>
+    <div style={{ marginBottom: '1.25rem' }}>
+      <p style={secStyle}>{title}</p>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
         {children}
       </div>
     </div>
   );
 }
 
-function Row({ children }) {
-  return (
-    <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '0.375rem' }}>
-      {children}
-    </div>
-  );
-}
-
-function Tag({ children, dim, accent }) {
-  return (
-    <span style={{
-      background: accent ? 'var(--accent-muted)' : 'var(--chip-bg)',
-      color: accent ? 'var(--accent)' : dim ? 'var(--text-muted)' : 'var(--text-secondary)',
-      fontSize: '0.75rem',
-      padding: '0.15rem 0.5rem',
-      borderRadius: '4px',
-      fontWeight: 500,
-    }}>
-      {children}
-    </span>
-  );
-}
+const secStyle = {
+  fontSize: '0.6875rem',
+  fontWeight: 700,
+  color: '#64748B',
+  textTransform: 'uppercase',
+  letterSpacing: '0.08em',
+  marginBottom: '0.5rem',
+};
 
 const styles = {
   wrap: {
@@ -156,6 +157,7 @@ const styles = {
     border: '1px solid var(--card-border)',
     borderRadius: '0.75rem',
     overflow: 'hidden',
+    borderTop: '1px solid #E2E8F0',
   },
   toggle: {
     width: '100%',
@@ -168,21 +170,129 @@ const styles = {
     cursor: 'pointer',
     textAlign: 'left',
   },
-  toggleIcon: { fontSize: '0.875rem', color: 'var(--text-muted)', width: 12 },
-  toggleLabel: { fontSize: '0.9375rem', fontWeight: 600, color: 'var(--text-primary)' },
-  toggleMeta: { fontSize: '0.8125rem', color: 'var(--text-muted)', marginLeft: '0.25rem' },
+  toggleIcon: {
+    fontSize: '0.75rem',
+    color: '#64748B',
+    width: 12,
+    display: 'inline-block',
+  },
+  toggleLabel: {
+    fontSize: '0.6875rem',
+    fontWeight: 500,
+    color: '#64748B',
+    textTransform: 'uppercase',
+    letterSpacing: '0.08em',
+  },
+  toggleMeta: {
+    fontSize: '0.75rem',
+    color: 'var(--text-muted)',
+    marginLeft: '0.25rem',
+  },
+  gapBadge: {
+    fontSize: '0.6875rem',
+    color: '#92400E',
+    background: '#FEF3C7',
+    border: '1px solid #FDE68A',
+    padding: '2px 8px',
+    borderRadius: '100px',
+    fontWeight: 500,
+    marginLeft: '0.25rem',
+  },
   body: {
     padding: '0 1.25rem 1.25rem',
     borderTop: '1px solid var(--card-border)',
-    paddingTop: '1rem',
+    paddingTop: '1.25rem',
   },
   bodyCollapsed: { display: 'none' },
-  arrow: { color: 'var(--text-muted)', fontSize: '0.75rem' },
-  colList: { fontSize: '0.75rem', color: 'var(--text-muted)', fontStyle: 'italic' },
-  joinKeys: { fontSize: '0.8125rem', color: 'var(--text-secondary)' },
-  dim: { fontSize: '0.8125rem', color: 'var(--text-muted)' },
-  gapIcon: { color: 'var(--warning)', fontSize: '0.875rem' },
-  gapText: { fontSize: '0.8125rem', color: 'var(--text-secondary)' },
+
+  // Sources
+  sourceRow: {
+    display: 'flex',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: '0.375rem',
+  },
+  sourcePill: {
+    background: '#F0FDF4',
+    color: '#166534',
+    border: '1px solid #BBF7D0',
+    fontSize: '0.75rem',
+    padding: '3px 10px',
+    borderRadius: '6px',
+    fontWeight: 500,
+  },
+  sourceArrow: {
+    color: '#94A3B8',
+    fontSize: '0.75rem',
+  },
+  sourceType: {
+    color: '#64748B',
+    fontSize: '0.75rem',
+    fontStyle: 'italic',
+  },
+  colList: {
+    fontSize: '0.75rem',
+    color: 'var(--text-muted)',
+    fontStyle: 'italic',
+  },
+
+  // Joins
+  joinTag: {
+    background: 'var(--accent-muted)',
+    color: 'var(--accent)',
+    fontSize: '0.75rem',
+    padding: '0.15rem 0.5rem',
+    borderRadius: '4px',
+    fontWeight: 500,
+  },
+  dimTag: {
+    background: 'var(--chip-bg)',
+    color: 'var(--text-muted)',
+    fontSize: '0.75rem',
+    padding: '0.15rem 0.5rem',
+    borderRadius: '4px',
+    fontWeight: 500,
+  },
+  dimText: {
+    fontSize: '0.8125rem',
+    color: 'var(--text-muted)',
+  },
+
+  // Gaps
+  gapCard: {
+    display: 'flex',
+    alignItems: 'flex-start',
+    gap: '0.625rem',
+    background: '#FFFBEB',
+    borderRadius: '6px',
+    padding: '10px 12px',
+    borderLeft: '3px solid #F97316',
+    marginBottom: '0',
+  },
+  gapWarningBadge: {
+    fontSize: '0.75rem',
+    background: '#FFF7ED',
+    border: '1px solid #FED7AA',
+    borderRadius: '4px',
+    padding: '1px 4px',
+    color: '#F97316',
+    flexShrink: 0,
+    lineHeight: 1.5,
+  },
+  gapText: {
+    fontSize: '0.8125rem',
+    color: '#78350F',
+    lineHeight: 1.6,
+  },
+  gapFootnote: {
+    fontSize: '0.75rem',
+    color: '#94A3B8',
+    fontStyle: 'italic',
+    marginTop: '0.75rem',
+    marginBottom: 0,
+    lineHeight: 1.5,
+  },
+
   footer: {
     marginTop: '1rem',
     paddingTop: '0.75rem',

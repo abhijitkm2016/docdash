@@ -4,6 +4,31 @@ import { useState, useRef } from 'react';
 const ACCEPTED       = '.pdf,.xlsx,.xls,.csv,.docx,.doc,.pptx,.ppt';
 const ACCEPTED_LABEL = 'PDF · Excel · CSV · Word · PowerPoint';
 
+const SAMPLE_TEXT = `EXECUTIVE BRIEFING — Q2 2026 PRODUCT PERFORMANCE REVIEW
+Prepared by: Product Strategy Team
+Date: June 2026
+
+OVERVIEW
+DocDash processed 1,247 documents in Q2 2026, representing a 340% increase from Q1 (283 documents). Average processing time improved from 8.2 seconds to 4.7 seconds following the April infrastructure upgrade. User retention at day-7 stands at 34%, above the 28% SaaS benchmark for document tools.
+
+KEY METRICS
+- Total documents processed: 1,247 (Q2) vs 283 (Q1) — +340% QoQ
+- Average processing time: 4.7 seconds (improved from 8.2s)
+- Day-7 retention: 34% (benchmark: 28%)
+- Export actions per session: 1.8 (Print/PDF: 62%, Download: 38%)
+- Most common document types: Financial reports (38%), Resumes/profiles (24%), Strategy memos (19%), Contracts (11%), Other (8%)
+- API cost per document: $0.18 average
+- Gross margin at current pricing: 71%
+
+HIGHLIGHTS
+The panel discussion feature (launched June 1) has driven the highest session depth of any feature — users who engage with the panel spend 4.2x longer in the app and have a 61% higher export rate.
+
+RISKS AND GAPS
+- No user authentication means zero repeat-user identification — the 34% retention figure is estimated, not measured
+- API cost variance is high: simple 1-page documents cost $0.04, complex 40-page reports cost $0.67 — pricing model needs tiering
+- Mobile usage accounts for 12% of sessions but bounce rate on mobile is 74% vs 31% on desktop
+- No data on whether exported dashboards are being shared externally`;
+
 // ── File-type metadata ────────────────────────────────────────────────────────
 const FILE_TYPE = {
   pdf:  { label: 'PDF',  color: '#DC2626', bg: 'rgba(220,38,38,0.1)',  icon: '📄' },
@@ -29,7 +54,7 @@ function truncateName(name, max = 42) {
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────
-export default function FileUpload({ onResult, onError, onWarning }) {
+export default function FileUpload({ onResult, onError, onWarning, onSampleLoad }) {
   const [files,       setFiles]       = useState([]);   // File[]
   const [dragging,    setDragging]    = useState(false);
   const [loading,     setLoading]     = useState(false);
@@ -69,19 +94,14 @@ export default function FileUpload({ onResult, onError, onWarning }) {
     if (!loading) addFiles(e.dataTransfer.files);
   }
 
-  // Change 5 — generation triggered explicitly
-  async function handleGenerate() {
-    if (!files.length || loading) return;
+  // Core SSE fetch — accepts a ready FormData
+  async function runAnalysis(formData) {
     setLoading(true);
     setProgress('Uploading…');
     onError(null);
 
-    const formData = new FormData();
-    files.forEach(f => formData.append('files', f));
-    if (context.trim()) formData.append('context', context.trim());
-
-    let analysingStart = null; // timestamp when Claude phase begins
-    let elapsedTimer  = null;  // interval that ticks the elapsed label
+    let analysingStart = null;
+    let elapsedTimer  = null;
 
     function startElapsedTicker() {
       analysingStart = Date.now();
@@ -94,7 +114,6 @@ export default function FileUpload({ onResult, onError, onWarning }) {
     try {
       const res = await fetch('/api/analyze', { method: 'POST', body: formData });
 
-      // Catch Vercel/proxy error pages before they hit JSON.parse
       if (!res.ok) {
         const text = await res.text();
         let msg;
@@ -102,11 +121,9 @@ export default function FileUpload({ onResult, onError, onWarning }) {
         throw new Error(msg || `Server error ${res.status}`);
       }
 
-      // Read the SSE stream
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
       let buffer = '';
-
       let gotResult = false;
 
       while (true) {
@@ -115,7 +132,7 @@ export default function FileUpload({ onResult, onError, onWarning }) {
 
         buffer += decoder.decode(value, { stream: true });
         const chunks = buffer.split('\n\n');
-        buffer = chunks.pop(); // keep any incomplete trailing chunk
+        buffer = chunks.pop();
 
         for (const chunk of chunks) {
           if (!chunk.trim()) continue;
@@ -147,7 +164,6 @@ export default function FileUpload({ onResult, onError, onWarning }) {
         }
       }
 
-      // Stream closed without a result — function timed out or crashed
       if (!gotResult) {
         throw new Error('Analysis timed out. The document may be too large or complex. Please try again.');
       }
@@ -156,6 +172,26 @@ export default function FileUpload({ onResult, onError, onWarning }) {
       onError(err.message);
       setLoading(false);
     }
+  }
+
+  // Change 5 — generation triggered explicitly
+  async function handleGenerate() {
+    if (!files.length || loading) return;
+    const formData = new FormData();
+    files.forEach(f => formData.append('files', f));
+    if (context.trim()) formData.append('context', context.trim());
+    await runAnalysis(formData);
+  }
+
+  // Sample document — bypass file picker
+  async function handleSampleClick() {
+    if (loading) return;
+    const blob = new Blob([SAMPLE_TEXT], { type: 'text/plain' });
+    const file = new File([blob], 'sample-q2-2026-product-review.txt', { type: 'text/plain' });
+    const formData = new FormData();
+    formData.append('files', file);
+    onSampleLoad?.();
+    await runAnalysis(formData);
   }
 
   const hasFiles = files.length > 0;
@@ -235,6 +271,13 @@ export default function FileUpload({ onResult, onError, onWarning }) {
             {/* Change 7 — "Choose Files" (plural) */}
             <div style={styles.browseBtn}>Choose Files</div>
           </div>
+
+          {/* Sample document link */}
+          {!hasFiles && !loading && (
+            <button onClick={handleSampleClick} style={styles.sampleLink}>
+              or try a sample document →
+            </button>
+          )}
 
           {/* Change 6 — File list */}
           {hasFiles && (
@@ -456,6 +499,21 @@ const styles = {
     fontWeight: 600,
     fontSize: '0.875rem',
     userSelect: 'none',
+  },
+
+  // Sample link
+  sampleLink: {
+    display: 'block',
+    background: 'none',
+    border: 'none',
+    fontSize: '0.8125rem',
+    color: '#2563EB',
+    cursor: 'pointer',
+    textDecoration: 'underline',
+    marginTop: '0.75rem',
+    textAlign: 'center',
+    fontFamily: 'inherit',
+    padding: 0,
   },
 
   // Change 6 — File list

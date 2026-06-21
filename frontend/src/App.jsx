@@ -11,6 +11,7 @@ function AppInner() {
   const [remixing,     setRemixing]     = useState(false);
   const [remixVersion, setRemixVersion] = useState(0);
   const [animKey,      setAnimKey]      = useState(0);
+  const [isSample,     setIsSample]     = useState(false);
 
   function handleResult(data) {
     setResult(data);
@@ -26,6 +27,7 @@ function AppInner() {
     setRemixVersion(0);
     setError(null);
     setWarning(null);
+    setIsSample(false);
   }
 
   async function handleRemix() {
@@ -56,6 +58,11 @@ function AppInner() {
   if (result) {
     return (
       <div key={animKey} style={{ animation: 'fadeInUp 0.35s ease' }}>
+        {isSample && (
+          <div style={styles.sampleBanner}>
+            Viewing sample document — upload your own file to analyse it
+          </div>
+        )}
         <Dashboard
           data={result.dashboardData}
           standaloneHtml={result.standaloneHtml}
@@ -82,7 +89,7 @@ function AppInner() {
 
   return (
     <>
-      <FileUpload onResult={handleResult} onError={setError} onWarning={setWarning} />
+      <FileUpload onResult={handleResult} onError={setError} onWarning={setWarning} onSampleLoad={() => setIsSample(true)} />
       {warning && (
         <div style={styles.warningBanner} role="status">
           ⚠ {warning}
@@ -107,6 +114,18 @@ export default function App() {
 }
 
 const styles = {
+  sampleBanner: {
+    background: '#EFF6FF',
+    border: '1px solid #BFDBFE',
+    color: '#1E40AF',
+    fontSize: '0.75rem',
+    padding: '8px 16px',
+    borderRadius: '6px',
+    marginBottom: '16px',
+    textAlign: 'center',
+    maxWidth: 1200,
+    margin: '0 auto 16px',
+  },
   errorBanner: {
     position: 'fixed',
     bottom: '1.5rem',

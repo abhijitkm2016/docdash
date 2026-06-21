@@ -1,9 +1,21 @@
 import { useState, useRef } from 'react';
 import {
-  BarChart, Bar, LineChart, Line,
+  BarChart, Bar, LineChart, Line, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   ReferenceDot,
 } from 'recharts';
+
+// ── DocDash palette ───────────────────────────────────────────────────────────
+const COLOR_PRIMARY = '#2563EB';
+
+// Interpolate between #1D4ED8 (darkest) and #BFDBFE (lightest)
+function blueGradient(index, total) {
+  const t = total <= 1 ? 0 : index / (total - 1);
+  const r = Math.round(0x1D + t * (0xBF - 0x1D));
+  const g = Math.round(0x4E + t * (0xDB - 0x4E));
+  const b = Math.round(0xD8 + t * (0xFE - 0xD8));
+  return `rgb(${r},${g},${b})`;
+}
 import { useFilter } from '../context/FilterContext';
 import { useFilteredChartData } from '../hooks/useFilteredData';
 
@@ -217,8 +229,8 @@ export default function ChartPanel({ chart, annotations = [], fieldMeta = {} }) 
     });
   }
 
-  const axisTickStyle = { fill: 'var(--text-muted)', fontSize: 11 };
-  const gridProps     = { stroke: 'var(--card-border)', strokeDasharray: '3 3' };
+  const axisTickStyle = { fill: '#64748B', fontSize: 11 };
+  const gridProps     = { stroke: '#F1F5F9', strokeDasharray: '3 3' };
 
   // Build ReferenceDot elements for this chart's annotations
   const annotationDots = annotations
@@ -280,7 +292,7 @@ export default function ChartPanel({ chart, annotations = [], fieldMeta = {} }) 
             <XAxis dataKey={chart.dataKey} tick={axisTickStyle} />
             <YAxis tick={axisTickStyle} />
             <Tooltip content={props => <ExecutiveTooltip {...props} fieldMeta={fieldMeta} />} />
-            <Bar dataKey={chart.valueKey} fill="var(--accent)" radius={[4, 4, 0, 0]} />
+            <Bar dataKey={chart.valueKey} fill={COLOR_PRIMARY} radius={[4, 4, 0, 0]} />
             {annotationDots}
           </BarChart>
         ) : chart.type === 'line' ? (
@@ -292,26 +304,33 @@ export default function ChartPanel({ chart, annotations = [], fieldMeta = {} }) 
             <Line
               type="monotone"
               dataKey={chart.valueKey}
-              stroke="var(--accent)"
+              stroke={COLOR_PRIMARY}
               strokeWidth={2}
-              dot={{ r: 3, fill: 'var(--accent)' }}
+              dot={{ r: 3, fill: COLOR_PRIMARY }}
             />
             {annotationDots}
           </LineChart>
-        ) : (
-          <BarChart
-            data={[...data].sort((a, b) => b[chart.valueKey] - a[chart.valueKey])}
-            layout="vertical"
-            onClick={handleBarLineClick}
-            margin={{ left: 8, right: 16, top: 4, bottom: 4 }}
-          >
-            <CartesianGrid {...gridProps} horizontal={false} />
-            <XAxis type="number" tick={axisTickStyle} />
-            <YAxis type="category" dataKey={chart.dataKey} tick={{ ...axisTickStyle, fontSize: 10 }} width={120} />
-            <Tooltip content={props => <ExecutiveTooltip {...props} fieldMeta={fieldMeta} />} />
-            <Bar dataKey={chart.valueKey} fill="var(--accent)" radius={[0, 4, 4, 0]} />
-          </BarChart>
-        )}
+        ) : (() => {
+          const sortedData = [...data].sort((a, b) => b[chart.valueKey] - a[chart.valueKey]);
+          return (
+            <BarChart
+              data={sortedData}
+              layout="vertical"
+              onClick={handleBarLineClick}
+              margin={{ left: 8, right: 16, top: 4, bottom: 4 }}
+            >
+              <CartesianGrid {...gridProps} horizontal={false} />
+              <XAxis type="number" tick={axisTickStyle} />
+              <YAxis type="category" dataKey={chart.dataKey} tick={{ ...axisTickStyle, fontSize: 10 }} width={120} />
+              <Tooltip content={props => <ExecutiveTooltip {...props} fieldMeta={fieldMeta} />} />
+              <Bar dataKey={chart.valueKey} radius={[0, 4, 4, 0]}>
+                {sortedData.map((_, i) => (
+                  <Cell key={i} fill={blueGradient(i, sortedData.length)} />
+                ))}
+              </Bar>
+            </BarChart>
+          );
+        })()}
       </ResponsiveContainer>
 
 
