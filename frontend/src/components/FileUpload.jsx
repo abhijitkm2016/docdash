@@ -94,10 +94,9 @@ export default function FileUpload({ onResult, onError, onWarning, onSampleLoad,
     if (!loading) addFiles(e.dataTransfer.files);
   }
 
-  // Core SSE fetch — accepts a ready FormData
+  // Core SSE fetch — accepts a ready FormData.
+  // Callers are responsible for setting loading=true before calling this.
   async function runAnalysis(formData) {
-    setLoading(true);
-    onLoadingChange?.(true);
     setProgress('Uploading…');
     onError(null);
 
@@ -185,6 +184,9 @@ export default function FileUpload({ onResult, onError, onWarning, onSampleLoad,
       onError(`File "${oversized.name}" exceeds the 10MB limit. Please upload a smaller file.`);
       return;
     }
+    // Set loading state first — before building formData or awaiting anything
+    setLoading(true);
+    onLoadingChange?.(true);
     const formData = new FormData();
     files.forEach(f => formData.append('files', f));
     if (context.trim()) formData.append('context', context.trim());
@@ -194,6 +196,10 @@ export default function FileUpload({ onResult, onError, onWarning, onSampleLoad,
   // Sample document — send as CSV so backend fileFilter and fileParser both accept it
   async function handleSampleClick() {
     if (loading) return;
+    // Set loading state as the very first thing — before onSampleLoad or any
+    // other state update — so React flushes isLoading=true before the fetch starts
+    setLoading(true);
+    onLoadingChange?.(true);
     const blob = new Blob([SAMPLE_TEXT], { type: 'text/csv' });
     const file = new File([blob], 'sample-q2-2026-product-review.csv', { type: 'text/csv' });
     const formData = new FormData();
