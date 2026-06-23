@@ -2,6 +2,8 @@ import { useState, useRef, useEffect } from 'react';
 import { FilterProvider, useFilter } from '../context/FilterContext';
 import AuthGate from './AuthGate';
 import { useTheme } from '../context/ThemeContext';
+import { exportToPdf } from '../utils/exportPdf';
+import { exportToPpt } from '../utils/exportPpt';
 import KpiCard          from './KpiCard';
 import ChartPanel       from './ChartPanel';
 import DataTable        from './DataTable';
@@ -72,8 +74,8 @@ const modalStyles = {
   },
 };
 
-// ── Export dropdown (Print/PDF + Download) ────────────────────────────────────
-function ExportButton({ standaloneHtml, title, isAuthenticated, onRequestSignIn }) {
+// ── Export dropdown ───────────────────────────────────────────────────────────
+function ExportButton({ standaloneHtml, dashboardData, isAuthenticated, onRequestSignIn }) {
   const [open,     setOpen]     = useState(false);
   const [showGate, setShowGate] = useState(false);
   const ref = useRef(null);
@@ -89,17 +91,6 @@ function ExportButton({ standaloneHtml, title, isAuthenticated, onRequestSignIn 
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
-  function download() {
-    const blob = new Blob([standaloneHtml], { type: 'text/html' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${(title || 'dashboard').replace(/[^a-z0-9]/gi, '_').toLowerCase()}.html`;
-    a.click();
-    URL.revokeObjectURL(url);
-    setOpen(false);
-  }
-
   function handleClick() {
     if (!isAuthenticated) {
       setShowGate(o => !o);
@@ -107,6 +98,35 @@ function ExportButton({ standaloneHtml, title, isAuthenticated, onRequestSignIn 
       setOpen(o => !o);
     }
   }
+
+  function handleHtml() {
+    if (!standaloneHtml) return;
+    const blob = new Blob([standaloneHtml], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    const safeTitle = (dashboardData?.title || 'dashboard').replace(/[^a-z0-9]/gi, '-').toLowerCase();
+    a.download = `${safeTitle}.html`;
+    a.click();
+    URL.revokeObjectURL(url);
+    setOpen(false);
+  }
+
+  function handlePdf() {
+    exportToPdf(dashboardData);
+    setOpen(false);
+  }
+
+  function handlePpt() {
+    exportToPpt(dashboardData);
+    setOpen(false);
+  }
+
+  const options = [
+    { label: '🌐 HTML Dashboard', action: handleHtml, desc: 'Interactive web file' },
+    { label: '📄 PDF Report',     action: handlePdf,  desc: 'Structured analyst report' },
+    { label: '📊 PPT Deck',       action: handlePpt,  desc: '5-slide presentation' },
+  ];
 
   return (
     <div ref={ref} style={{ position: 'relative' }} className="no-print">
@@ -116,7 +136,7 @@ function ExportButton({ standaloneHtml, title, isAuthenticated, onRequestSignIn 
         aria-haspopup="true"
         aria-expanded={open || showGate}
       >
-        ⬇ Export
+        ⬇ Export <span style={{ fontSize: '10px', opacity: 0.6, display: 'inline-block', transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s' }}>▼</span>
       </button>
       {showGate && (
         <AuthGate
@@ -127,12 +147,25 @@ function ExportButton({ standaloneHtml, title, isAuthenticated, onRequestSignIn 
       )}
       {isAuthenticated && open && (
         <div style={exportStyles.dropdown}>
-          <button style={exportStyles.item} onClick={() => { window.print(); setOpen(false); }}>
-            🖨 Print / PDF
-          </button>
-          <button style={exportStyles.item} onClick={download}>
-            ↓ Download
-          </button>
+          {options.map((opt, idx) => (
+            <button
+              key={opt.label}
+              onClick={opt.action}
+              style={{
+                ...exportStyles.item,
+                borderBottom: idx < options.length - 1 ? '1px solid var(--card-border)' : 'none',
+              }}
+              onMouseEnter={e => { e.currentTarget.style.background = 'var(--table-header-bg)'; }}
+              onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}
+            >
+              <span style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-primary)', display: 'block' }}>
+                {opt.label}
+              </span>
+              <span style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px', display: 'block' }}>
+                {opt.desc}
+              </span>
+            </button>
+          ))}
         </div>
       )}
     </div>
@@ -157,22 +190,22 @@ const exportStyles = {
     right: 0,
     background: 'var(--card-bg)',
     border: '1px solid var(--card-border)',
-    borderRadius: '0.5rem',
-    boxShadow: '0 4px 16px rgba(0,0,0,0.18)',
-    minWidth: 160,
-    zIndex: 100,
+    borderRadius: '0.625rem',
+    boxShadow: '0 8px 24px rgba(0,0,0,0.15)',
+    minWidth: 200,
+    zIndex: 200,
     overflow: 'hidden',
   },
   item: {
     display: 'block',
     width: '100%',
-    background: 'none',
+    background: 'transparent',
     border: 'none',
     textAlign: 'left',
-    padding: '0.625rem 1rem',
-    fontSize: '0.875rem',
-    color: 'var(--text-secondary)',
+    padding: '10px 14px',
     cursor: 'pointer',
+    fontFamily: 'inherit',
+    transition: 'background 0.1s ease',
   },
 };
 
@@ -278,7 +311,7 @@ function DashboardInner({
           {!readOnly && (
             <ExportButton
               standaloneHtml={standaloneHtml}
-              title={data.title}
+              dashboardData={data}
               isAuthenticated={isAuthenticated}
               onRequestSignIn={onRequestSignIn}
             />

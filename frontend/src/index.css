@@ -27,6 +27,9 @@
   --chip-active-text: #FFFFFF;
   --tooltip-bg:       #202124;
   --tooltip-border:   #3C4043;
+  --hover:            #F1F5F9;
+  --border:           #E2E8F0;
+  --surface:          #FFFFFF;
 }
 
 :root[data-theme="dark"] {
@@ -55,6 +58,9 @@
   --chip-active-text: #FFFFFF;
   --tooltip-bg:       #0F1117;
   --tooltip-border:   #2D3142;
+  --hover:            #1E293B;
+  --border:           #334155;
+  --surface:          #1E2130;
 }
 
 body {
