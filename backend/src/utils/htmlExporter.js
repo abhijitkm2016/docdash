@@ -8,8 +8,20 @@ function buildStandaloneHtml(data) {
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>${escapeHtml(data.title || 'DocDash Dashboard')}</title>
+  <meta name="color-scheme" content="light only">
+  <meta name="supported-color-schemes" content="light">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
   <style>
+    /* Safari/iOS dark mode fix */
+    :root {
+      color-scheme: light only;
+      -webkit-text-size-adjust: 100%;
+    }
+    html, body {
+      background-color: #0f172a !important;
+      color: #e2e8f0 !important;
+      -webkit-font-smoothing: antialiased;
+    }
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0f172a; color: #e2e8f0; min-height: 100vh; padding: 2rem; }
     h1 { font-size: 1.75rem; font-weight: 700; margin-bottom: 0.25rem; color: #f8fafc; }

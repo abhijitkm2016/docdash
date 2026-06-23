@@ -2,269 +2,373 @@ import PptxGenJS from 'pptxgenjs';
 
 export function exportToPpt(dashboardData) {
   const {
-    title = 'Dashboard Report',
+    title      = 'Dashboard Report',
     standfirst = '',
-    summary = [],
-    kpis = [],
-    charts = [],
-    narrative = '',
-    watchList = [],
+    summary    = [],
+    kpis       = [],
+    charts     = [],
+    narrative  = '',
+    watchList  = [],
   } = dashboardData;
 
   const pptx = new PptxGenJS();
-  pptx.layout = 'LAYOUT_WIDE'; // 16:9
+  pptx.layout = 'LAYOUT_WIDE';
 
-  const BLUE      = '2563EB';
-  const DARK      = '1E293B';
-  const SLATE     = '475569';
-  const LIGHT_BG  = 'F8FAFC';
-  const BORDER    = 'E2E8F0';
+  // ── Design tokens ────────────────────────────────────────────────────────────
+  const C = {
+    blue:      '2563EB',
+    blueDark:  '1D4ED8',
+    blueLight: 'EFF6FF',
+    navy:      '0F172A',
+    dark:      '1E293B',
+    slate:     '475569',
+    muted:     '64748B',
+    subtle:    '94A3B8',
+    border:    'E2E8F0',
+    surface:   'F8FAFC',
+    white:     'FFFFFF',
+    green:     '16A34A',
+    red:       'DC2626',
+  };
+  const FONT = 'Calibri';
 
   const today = new Date().toLocaleDateString('en-GB', {
     day: 'numeric', month: 'long', year: 'numeric',
   });
 
-  function addFooter(slide) {
+  // ── Helpers ──────────────────────────────────────────────────────────────────
+
+  function addSlideHeader(slide, slideTitle) {
+    slide.addShape(pptx.ShapeType.rect, {
+      x: 0, y: 0, w: 13.33, h: 0.07,
+      fill: { color: C.blue }, line: { color: C.blue },
+    });
+    slide.addText(slideTitle, {
+      x: 0.45, y: 0.22, w: 12.4, h: 0.55,
+      fontSize: 20, bold: true, color: C.dark, fontFace: FONT,
+    });
     slide.addShape(pptx.ShapeType.line, {
-      x: 0.4, y: 6.85, w: 12.5, h: 0,
-      line: { color: BORDER, width: 0.5 },
-    });
-    slide.addText('DocDash · AI-Powered Document Analysis', {
-      x: 0.4, y: 6.9, w: 8, h: 0.3,
-      fontSize: 8, color: '94A3B8',
-    });
-    slide.addText(today, {
-      x: 8.6, y: 6.9, w: 4, h: 0.3,
-      fontSize: 8, color: '94A3B8', align: 'right',
+      x: 0.45, y: 0.82, w: 12.43, h: 0,
+      line: { color: C.border, width: 0.75 },
     });
   }
 
-  // ── SLIDE 1: Title ──────────────────────────────────────────────
-  const slide1 = pptx.addSlide();
-  slide1.background = { color: LIGHT_BG };
+  function addFooter(slide) {
+    slide.addShape(pptx.ShapeType.line, {
+      x: 0.45, y: 7.05, w: 12.43, h: 0,
+      line: { color: C.border, width: 0.5 },
+    });
+    slide.addText('DocDash · AI-Powered Document Intelligence', {
+      x: 0.45, y: 7.12, w: 7, h: 0.28,
+      fontSize: 7.5, color: C.subtle, fontFace: FONT,
+    });
+    slide.addText(today, {
+      x: 7.5, y: 7.12, w: 5.38, h: 0.28,
+      fontSize: 7.5, color: C.subtle, fontFace: FONT, align: 'right',
+    });
+  }
 
-  slide1.addShape(pptx.ShapeType.rect, {
-    x: 0, y: 0, w: 0.12, h: 7.5,
-    fill: { color: BLUE },
-    line: { color: BLUE },
+  // ── SLIDE 1: Title ───────────────────────────────────────────────────────────
+  const s1 = pptx.addSlide();
+  s1.background = { color: C.navy };
+
+  s1.addShape(pptx.ShapeType.rect, {
+    x: 0, y: 0, w: 0.18, h: 7.5,
+    fill: { color: C.blue }, line: { color: C.blue },
   });
 
-  slide1.addText(title, {
-    x: 0.5, y: 2.2, w: 12, h: 1.2,
-    fontSize: 36, bold: true, color: DARK, fontFace: 'Calibri',
+  s1.addText('DOCDASH', {
+    x: 10.5, y: 0.28, w: 2.6, h: 0.3,
+    fontSize: 9, color: C.blue, fontFace: FONT,
+    bold: true, align: 'right', charSpacing: 3,
+  });
+
+  s1.addText(title, {
+    x: 0.55, y: 2.0, w: 11.8, h: 2.0,
+    fontSize: 34, bold: true, color: C.white,
+    fontFace: FONT, lineSpacingMultiple: 1.1,
   });
 
   if (standfirst) {
-    slide1.addText(standfirst, {
-      x: 0.5, y: 3.6, w: 11, h: 0.8,
-      fontSize: 16, color: SLATE, fontFace: 'Calibri',
+    s1.addText(standfirst, {
+      x: 0.55, y: 4.1, w: 10, h: 0.9,
+      fontSize: 15, color: 'CBD5E1',
+      fontFace: FONT, lineSpacingMultiple: 1.3,
     });
   }
 
-  slide1.addText(`Generated ${today} · DocDash`, {
-    x: 0.5, y: 6.4, w: 8, h: 0.4,
-    fontSize: 11, color: '94A3B8',
+  s1.addShape(pptx.ShapeType.line, {
+    x: 0.55, y: 6.3, w: 5, h: 0,
+    line: { color: C.blue, width: 1.5 },
+  });
+  s1.addText(`Generated ${today}`, {
+    x: 0.55, y: 6.55, w: 8, h: 0.35,
+    fontSize: 10, color: C.subtle, fontFace: FONT,
   });
 
-  // ── SLIDE 2: Executive Summary ─────────────────────────────────
-  const slide2 = pptx.addSlide();
-  slide2.background = { color: 'FFFFFF' };
+  // ── SLIDE 2: Executive Summary ───────────────────────────────────────────────
+  const s2 = pptx.addSlide();
+  s2.background = { color: C.white };
+  addSlideHeader(s2, 'Executive Summary');
 
-  slide2.addShape(pptx.ShapeType.rect, {
-    x: 0, y: 0, w: 13.33, h: 0.08,
-    fill: { color: BLUE }, line: { color: BLUE },
-  });
-
-  slide2.addText('Executive Summary', {
-    x: 0.4, y: 0.3, w: 12, h: 0.6,
-    fontSize: 22, bold: true, color: DARK,
-  });
-
-  const summaryText = (summary || [])
+  const summaryPoints = (summary || [])
     .map(s => typeof s === 'string' ? s : s?.point || s?.text || '')
     .filter(Boolean)
-    .map(s => ({ text: `${s}\n`, options: { fontSize: 13, color: SLATE, bullet: { code: '2022' } } }));
+    .slice(0, 6);
 
-  if (summaryText.length > 0) {
-    slide2.addText(summaryText, {
-      x: 0.4, y: 1.1, w: 12.2, h: 5.4,
-      fontFace: 'Calibri', paraSpaceAfter: 6,
+  if (summaryPoints.length > 0) {
+    const summaryRows = summaryPoints.map((point, i) => [
+      {
+        text: String(i + 1).padStart(2, '0'),
+        options: {
+          fontSize: 11, bold: true, color: C.blue,
+          fontFace: FONT, align: 'center', valign: 'middle',
+          fill: i % 2 === 0 ? C.surface : C.white,
+          border: [
+            { color: C.border, pt: 0.5 }, { color: C.border, pt: 0.5 },
+            { color: C.border, pt: 0.5 }, { color: C.border, pt: 0.5 },
+          ],
+        },
+      },
+      {
+        text: point,
+        options: {
+          fontSize: 12, color: C.dark,
+          fontFace: FONT, valign: 'middle',
+          fill: i % 2 === 0 ? C.surface : C.white,
+          border: [
+            { color: C.border, pt: 0.5 }, { color: C.border, pt: 0.5 },
+            { color: C.border, pt: 0.5 }, { color: C.border, pt: 0.5 },
+          ],
+        },
+      },
+    ]);
+
+    s2.addTable(summaryRows, {
+      x: 0.45, y: 1.0, w: 12.43,
+      rowH: 0.82, colW: [0.6, 11.83], fontFace: FONT,
+    });
+  } else {
+    s2.addText('No summary available for this document.', {
+      x: 0.45, y: 3.5, w: 12.43, h: 0.5,
+      fontSize: 13, color: C.muted, fontFace: FONT, align: 'center',
     });
   }
 
-  addFooter(slide2);
+  addFooter(s2);
 
-  // ── SLIDE 3: Key Metrics ───────────────────────────────────────
-  const slide3 = pptx.addSlide();
-  slide3.background = { color: 'FFFFFF' };
-
-  slide3.addShape(pptx.ShapeType.rect, {
-    x: 0, y: 0, w: 13.33, h: 0.08,
-    fill: { color: BLUE }, line: { color: BLUE },
-  });
-
-  slide3.addText('Key Metrics', {
-    x: 0.4, y: 0.3, w: 12, h: 0.6,
-    fontSize: 22, bold: true, color: DARK,
-  });
+  // ── SLIDE 3: Key Metrics ─────────────────────────────────────────────────────
+  const s3 = pptx.addSlide();
+  s3.background = { color: C.white };
+  addSlideHeader(s3, 'Key Metrics');
 
   const displayKpis = (kpis || []).slice(0, 5);
-  const cardW   = displayKpis.length > 0 ? Math.min(2.4, 12.5 / displayKpis.length) : 2.4;
-  const cardGap = 0.2;
-  const startX  = (13.33 - (displayKpis.length * (cardW + cardGap) - cardGap)) / 2;
+  const count = displayKpis.length;
 
-  displayKpis.forEach((kpi, i) => {
-    const x = startX + i * (cardW + cardGap);
-    const y = 1.4;
+  if (count > 0) {
+    const totalW = 12.43;
+    const cardW  = (totalW - (count - 1) * 0.2) / count;
 
-    slide3.addShape(pptx.ShapeType.rect, {
-      x, y, w: cardW, h: 2.4,
-      fill: { color: 'F8FAFC' },
-      line: { color: BORDER, width: 0.5 },
-    });
+    displayKpis.forEach((kpi, i) => {
+      const x = 0.45 + i * (cardW + 0.2);
+      const y = 1.1;
 
-    slide3.addText(String(kpi.value ?? ''), {
-      x: x + 0.15, y: y + 0.4, w: cardW - 0.3, h: 0.9,
-      fontSize: 28, bold: true, color: DARK, align: 'center',
-    });
-
-    slide3.addText(kpi.label || '', {
-      x: x + 0.1, y: y + 1.35, w: cardW - 0.2, h: 0.5,
-      fontSize: 11, color: SLATE, align: 'center',
-    });
-
-    if (kpi.delta) {
-      slide3.addText(kpi.delta, {
-        x: x + 0.1, y: y + 1.85, w: cardW - 0.2, h: 0.35,
-        fontSize: 10, align: 'center',
-        color: kpi.deltaPositive ? '16A34A' : 'DC2626',
+      s3.addShape(pptx.ShapeType.rect, {
+        x, y, w: cardW, h: 4.8,
+        fill: { color: C.surface },
+        line: { color: C.border, width: 0.75 },
       });
-    }
-  });
+      // Blue top accent on each card
+      s3.addShape(pptx.ShapeType.rect, {
+        x, y, w: cardW, h: 0.06,
+        fill: { color: C.blue }, line: { color: C.blue },
+      });
 
-  addFooter(slide3);
+      s3.addText((kpi.label || '').toUpperCase(), {
+        x: x + 0.1, y: y + 0.18,
+        w: cardW - 0.2, h: 0.7,
+        fontSize: count > 3 ? 8 : 9,
+        bold: true, color: C.muted,
+        fontFace: FONT, align: 'center',
+        charSpacing: 0.5, wrap: true,
+      });
 
-  // ── SLIDE 4: Charts ────────────────────────────────────────────
-  const slide4 = pptx.addSlide();
-  slide4.background = { color: 'FFFFFF' };
+      s3.addText(String(kpi.value ?? '—'), {
+        x: x + 0.1, y: y + 1.0,
+        w: cardW - 0.2, h: 1.4,
+        fontSize: count > 3 ? 22 : 28,
+        bold: true, color: C.dark,
+        fontFace: FONT, align: 'center',
+        shrinkText: true,
+      });
 
-  slide4.addShape(pptx.ShapeType.rect, {
-    x: 0, y: 0, w: 13.33, h: 0.08,
-    fill: { color: BLUE }, line: { color: BLUE },
-  });
+      if (kpi.delta) {
+        s3.addText(kpi.delta, {
+          x: x + 0.1, y: y + 2.5,
+          w: cardW - 0.2, h: 0.45,
+          fontSize: 11, align: 'center',
+          fontFace: FONT, bold: true,
+          color: kpi.deltaPositive ? C.green : C.red,
+        });
+      }
+    });
+  } else {
+    s3.addText('No KPI data available for this document.', {
+      x: 0.45, y: 3.5, w: 12.43, h: 0.5,
+      fontSize: 13, color: C.muted, fontFace: FONT, align: 'center',
+    });
+  }
 
-  slide4.addText('Data Overview', {
-    x: 0.4, y: 0.3, w: 12, h: 0.6,
-    fontSize: 22, bold: true, color: DARK,
-  });
+  addFooter(s3);
+
+  // ── SLIDE 4: Charts ──────────────────────────────────────────────────────────
+  const s4 = pptx.addSlide();
+  s4.background = { color: C.white };
+  addSlideHeader(s4, 'Data Overview');
 
   const displayCharts = (charts || []).slice(0, 2);
 
-  displayCharts.forEach((chart, i) => {
-    const x = i === 0 ? 0.4 : 6.9;
-    const w = displayCharts.length === 1 ? 12.2 : 5.9;
+  if (displayCharts.length > 0) {
+    displayCharts.forEach((chart, i) => {
+      if (!chart?.data || chart.data.length === 0) return;
 
-    if (!chart?.data || chart.data.length === 0) return;
+      const isTwo = displayCharts.length === 2;
+      const x = i === 0 ? 0.45 : 6.88;
+      const w = isTwo ? 6.0 : 12.43;
+      const y = 1.0;
+      const h = 5.85;
 
-    // DocDash charts use dataKey/valueKey — get actual field names from the chart definition
-    const dk = chart.dataKey || 'name';
-    const vk = chart.valueKey || 'value';
+      const dk = chart.dataKey || 'name';
+      const vk = chart.valueKey || 'value';
+      const labels = chart.data.map(d => String(d[dk] || d.name || d.label || ''));
+      const values = chart.data.map(d => Number(d[vk] || d.value || d.y || 0));
 
-    const labels = chart.data.map(d => String(d[dk] || d.name || d.label || d.x || ''));
-    const values = chart.data.map(d => Number(d[vk] || d.value || d.y || d.count || 0));
+      const chartData = [{ name: chart.title || 'Value', labels, values }];
+      const isLine = chart.type === 'line';
+      const isHBar = chart.type === 'bar-horizontal';
 
-    const chartData = [{ name: chart.title || 'Value', labels, values }];
-
-    const chartType = chart.type === 'line'
-      ? pptx.ChartType.line
-      : pptx.ChartType.bar;
-
-    slide4.addChart(chartType, chartData, {
-      x, y: 1.1, w, h: 5.4,
-      chartColors: ['2563EB', '3B82F6', '60A5FA', '93C5FD', 'BFDBFE'],
-      showLegend: false,
-      showTitle: true,
-      title: chart.title || '',
-      titleFontSize: 12,
-      titleColor: DARK,
-      valAxisLabelFontSize: 9,
-      catAxisLabelFontSize: 9,
-      dataLabelFontSize: 9,
-      barDir: chart.type === 'bar-horizontal' ? 'bar' : 'col',
+      try {
+        s4.addChart(
+          isLine ? pptx.ChartType.line : pptx.ChartType.bar,
+          chartData,
+          {
+            x, y, w, h,
+            chartColors: ['2563EB', '3B82F6', '60A5FA', '93C5FD', 'BFDBFE'],
+            showLegend: false,
+            showTitle: true,
+            title: chart.title || '',
+            titleFontSize: 11,
+            titleColor: C.dark,
+            titleFontBold: true,
+            valAxisLabelFontSize: 8,
+            catAxisLabelFontSize: 8,
+            dataLabelFontSize: 8,
+            barDir: isHBar ? 'bar' : 'col',
+            barGrouping: 'clustered',
+            valGridLine: { style: 'dot', color: C.border },
+            plotAreaBorderColor: C.border,
+            plotAreaBorderWidth: 0.5,
+          }
+        );
+      } catch (_err) {
+        // Fallback: data table when chart render fails
+        s4.addText(chart.title || 'Chart', {
+          x, y: y + 0.1, w, h: 0.4,
+          fontSize: 11, bold: true, color: C.dark, fontFace: FONT,
+        });
+        const tableRows = [
+          [
+            { text: 'Label', options: { bold: true, fontSize: 9, color: C.white, fill: C.blue, fontFace: FONT } },
+            { text: 'Value', options: { bold: true, fontSize: 9, color: C.white, fill: C.blue, fontFace: FONT } },
+          ],
+          ...chart.data.slice(0, 10).map((d, ri) => [
+            { text: String(d.name || d.label || ''), options: { fontSize: 9, color: C.dark, fill: ri % 2 === 0 ? C.surface : C.white, fontFace: FONT } },
+            { text: String(d.value || d.y || 0), options: { fontSize: 9, color: C.dark, fill: ri % 2 === 0 ? C.surface : C.white, fontFace: FONT } },
+          ]),
+        ];
+        s4.addTable(tableRows, {
+          x, y: y + 0.6, w,
+          rowH: 0.32, fontFace: FONT,
+          border: { color: C.border, pt: 0.5 },
+        });
+      }
     });
-  });
-
-  if (displayCharts.length === 0) {
-    slide4.addText('Chart data not available for this document.', {
-      x: 0.4, y: 3.2, w: 12.2, h: 0.6,
-      fontSize: 13, color: SLATE, align: 'center',
+  } else {
+    s4.addText('No chart data available for this document.', {
+      x: 0.45, y: 3.5, w: 12.43, h: 0.5,
+      fontSize: 13, color: C.muted, fontFace: FONT, align: 'center',
     });
   }
 
-  addFooter(slide4);
+  addFooter(s4);
 
-  // ── SLIDE 5: Analysis + Watch List ─────────────────────────────
-  const slide5 = pptx.addSlide();
-  slide5.background = { color: 'FFFFFF' };
+  // ── SLIDE 5: Analysis + Watch List ───────────────────────────────────────────
+  const s5 = pptx.addSlide();
+  s5.background = { color: C.white };
+  addSlideHeader(s5, 'Analysis & Watch List');
 
-  slide5.addShape(pptx.ShapeType.rect, {
-    x: 0, y: 0, w: 13.33, h: 0.08,
-    fill: { color: BLUE }, line: { color: BLUE },
+  // Vertical divider
+  s5.addShape(pptx.ShapeType.line, {
+    x: 8.1, y: 1.0, w: 0, h: 6.0,
+    line: { color: C.border, width: 0.75 },
   });
 
-  slide5.addText('Analysis & Watch List', {
-    x: 0.4, y: 0.3, w: 12, h: 0.6,
-    fontSize: 22, bold: true, color: DARK,
+  // Left: Narrative
+  s5.addText('ANALYSIS', {
+    x: 0.45, y: 1.0, w: 7.4, h: 0.35,
+    fontSize: 8.5, bold: true, color: C.blue,
+    fontFace: FONT, charSpacing: 2,
   });
 
-  const narrativeShort = (narrative || '').substring(0, 600) +
-    (narrative?.length > 600 ? '…' : '');
-
-  slide5.addText('Analysis', {
-    x: 0.4, y: 1.1, w: 7.2, h: 0.4,
-    fontSize: 13, bold: true, color: BLUE,
-  });
+  const narrativeShort = (narrative || '').substring(0, 900) +
+    (narrative?.length > 900 ? '…' : '');
 
   if (narrativeShort) {
-    slide5.addText(narrativeShort, {
-      x: 0.4, y: 1.6, w: 7.2, h: 4.8,
-      fontSize: 10.5, color: SLATE, fontFace: 'Calibri',
-      paraSpaceAfter: 4, valign: 'top',
+    s5.addText(narrativeShort, {
+      x: 0.45, y: 1.45, w: 7.4, h: 5.5,
+      fontSize: 10.5, color: C.slate,
+      fontFace: FONT, lineSpacingMultiple: 1.35, valign: 'top',
     });
   }
 
-  slide5.addShape(pptx.ShapeType.line, {
-    x: 7.85, y: 1.1, w: 0, h: 5.3,
-    line: { color: BORDER, width: 0.5 },
+  // Right: Watch List
+  s5.addText('WATCH LIST', {
+    x: 8.3, y: 1.0, w: 4.6, h: 0.35,
+    fontSize: 8.5, bold: true, color: C.blue,
+    fontFace: FONT, charSpacing: 2,
   });
 
-  slide5.addText('Watch List', {
-    x: 8.0, y: 1.1, w: 4.9, h: 0.4,
-    fontSize: 13, bold: true, color: BLUE,
-  });
-
-  // watchList items are { type, text } in DocDash Claude schema
+  // watchList items are { type, text } from Claude schema
   const watchItems = (watchList || []).slice(0, 6);
-  if (watchItems.length > 0) {
-    const watchText = watchItems.map(item => ({
-      text: `${item?.text || item?.title || item?.label || String(item)}\n`,
-      options: {
-        fontSize: 10.5,
-        color: DARK,
-        bold: false,
-        bullet: { code: '25CF', color: BLUE },
-        paraSpaceAfter: 4,
-      },
-    }));
+  watchItems.forEach((item, i) => {
+    const text = item?.text || item?.title || item?.label ||
+                 (typeof item === 'string' ? item : '');
+    const yPos = 1.45 + i * 0.92;
 
-    slide5.addText(watchText, {
-      x: 8.0, y: 1.6, w: 4.9, h: 4.8,
-      fontFace: 'Calibri', valign: 'top',
+    s5.addShape(pptx.ShapeType.rect, {
+      x: 8.3, y: yPos, w: 4.6, h: 0.82,
+      fill: { color: C.surface },
+      line: { color: C.border, width: 0.5 },
     });
-  }
+    s5.addShape(pptx.ShapeType.ellipse, {
+      x: 8.42, y: yPos + 0.33, w: 0.1, h: 0.1,
+      fill: { color: C.blue }, line: { color: C.blue },
+    });
+    s5.addText(text, {
+      x: 8.58, y: yPos + 0.18,
+      w: 4.1, h: 0.55,
+      fontSize: 9.5, color: C.dark,
+      fontFace: FONT, valign: 'middle',
+      wrap: true,
+    });
+  });
 
-  addFooter(slide5);
+  addFooter(s5);
 
-  const safeTitle = (title || 'dashboard').replace(/[^a-z0-9]/gi, '-').toLowerCase();
+  // ── Download ─────────────────────────────────────────────────────────────────
+  const safeTitle = (title || 'dashboard')
+    .replace(/[^a-z0-9]/gi, '-').toLowerCase()
+    .replace(/-+/g, '-').substring(0, 60);
+
   pptx.writeFile({ fileName: `${safeTitle}-deck.pptx` });
 }
