@@ -410,13 +410,17 @@ function DashboardInner({
       {/* ── Topbar ───────────────────────────────────────────── */}
       <div style={styles.topbar} className="no-print">
         {/* Brand */}
-        <div style={styles.brandRow}>
+        <button
+          onClick={() => window.location.href = '/'}
+          title="Go to DocDash home"
+          style={{ ...styles.brandRow, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+        >
           <span style={styles.brandIcon}>⚡</span>
           <span style={styles.brandName}>DocDash</span>
           {remixVersion > 0 && (
             <span style={styles.perspectiveBadge}>Perspective #{remixVersion + 1}</span>
           )}
-        </div>
+        </button>
 
         {/* Controls: secondary icons → primary actions → profile */}
         <div style={styles.controls}>
