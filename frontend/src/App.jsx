@@ -228,26 +228,40 @@ function AppInner() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
-  // Remix control — only when a live session exists (not for history loads)
-  const remixControl = sessionId ? (
-    <div style={{ position: 'relative' }} className="no-print">
+  // Remix control — always visible; disabled when no live session (history loads)
+  const remixControl = (
+    <div style={{ position: 'relative', display: 'inline-block' }}>
       <button
-        onClick={() => {
-          if (!user) { setShowAuthModal(true); return; }
-          setShowRemixPopover(p => !p);
-        }}
-        disabled={remixLoading}
+        onClick={() => setShowRemixPopover(v => !v)}
+        disabled={!sessionId || remixLoading}
+        title={
+          !sessionId
+            ? "Remix is available immediately after generation — we don't store your document"
+            : remixLoading
+              ? 'Remixing…'
+              : 'Generate a new perspective on this document'
+        }
         style={{
-          ...navBtnStyle,
-          opacity: remixLoading ? 0.5 : 1,
+          display: 'flex',
+          alignItems: 'center',
+          gap: '6px',
+          padding: '7px 14px',
+          borderRadius: '8px',
+          border: '1.5px solid var(--border)',
+          background: 'var(--surface)',
+          color: !sessionId ? 'var(--text-secondary)' : 'var(--text-primary)',
+          fontSize: '13px',
+          fontWeight: '600',
+          cursor: !sessionId ? 'not-allowed' : 'pointer',
+          opacity: remixLoading ? 0.5 : !sessionId ? 0.5 : 1,
           animation: remixLoading ? 'pulse 1s ease-in-out infinite' : 'none',
+          transition: 'all 0.15s ease',
+          fontFamily: 'inherit',
         }}
-        aria-label="Remix this dashboard"
-        title={user ? 'Generate a new perspective on this document' : 'Sign in to remix'}
       >
         🔀 {remixLoading ? 'Remixing…' : 'Remix'}
       </button>
-      {showRemixPopover && (
+      {showRemixPopover && sessionId && (
         <RemixPopover
           onAutoRemix={handleAutoRemix}
           onGuidedRemix={handleGuidedRemix}
@@ -256,7 +270,7 @@ function AppInner() {
         />
       )}
     </div>
-  ) : null;
+  );
 
   // ── History sidebar — position:fixed, renders over any view ─────────────────
   const historySidebar = showHistory && (
