@@ -8,7 +8,7 @@ import FileUpload       from './components/FileUpload';
 import Dashboard        from './components/Dashboard';
 import AuthModal        from './components/AuthModal';
 import DocumentHistory  from './components/DocumentHistory';
-import ShareButton      from './components/ShareButton';
+import { useShares }    from './hooks/useShares';
 import SharedView       from './components/SharedView';
 import LoadingState     from './components/LoadingState';
 import ErrorState       from './components/ErrorState';
@@ -48,6 +48,7 @@ function AppInner() {
   const { user, signOut, loading: authLoading } = useAuth();
   const { saveDocument, loadDocument } = useDocuments();
   const { credits, deductCredit, restoreCredit } = useCredits();
+  const { createShare } = useShares();
 
   const [result,            setResult]            = useState(null);
   const [sessionId,         setSessionId]         = useState(null);
@@ -69,6 +70,7 @@ function AppInner() {
   const [creditSuccess,     setCreditSuccess]     = useState(null);
   const [guestLimitMessage, setGuestLimitMessage] = useState(null);
   const [currentMode,       setCurrentMode]       = useState('auto');
+  const [toast,             setToast]             = useState(null);
 
   async function handleResult(data, fileName) {
     setResult(data);
@@ -192,6 +194,17 @@ function AppInner() {
     setShowHistory(false);
   }
 
+  async function handleShare() {
+    if (!currentDocumentId) return;
+    const share = await createShare(currentDocumentId);
+    if (share) {
+      const url = `${window.location.origin}/share/${share.share_token}`;
+      await navigator.clipboard.writeText(url);
+      setToast('Link copied to clipboard');
+      setTimeout(() => setToast(null), 3000);
+    }
+  }
+
   // ── Mid-session save: fires when user signs in with a dashboard already open ─
   const prevUserIdRef = useRef(user?.id ?? null);
   useEffect(() => {
@@ -213,47 +226,6 @@ function AppInner() {
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
-
-  // ── Auth controls rendered into Dashboard's navbar ──────────────────────────
-  const authControls = (
-    <>
-      <button
-        onClick={() => setShowHistory(h => !h)}
-        style={navBtnStyle}
-        className="no-print"
-        title="Document history"
-      >
-        📄 History
-      </button>
-      {user ? (
-        <>
-          <button
-            onClick={() => setShowPricingModal(true)}
-            style={creditChipStyle}
-            className="no-print"
-            title="Buy more credits"
-          >
-            <span>⚡</span>
-            <span>{credits?.credits_remaining ?? '—'} credits</span>
-          </button>
-          <span style={userEmailStyle} title={user.email}>
-            {user.email.length > 22 ? user.email.slice(0, 20) + '…' : user.email}
-          </span>
-          <button onClick={signOut} style={textLinkStyle} className="no-print">
-            Sign out
-          </button>
-        </>
-      ) : (
-        <button
-          onClick={() => setShowAuthModal(true)}
-          style={navBtnStyle}
-          className="no-print"
-        >
-          Sign in
-        </button>
-      )}
-    </>
-  );
 
   // Remix control — only when a live session exists (not for history loads)
   const remixControl = sessionId ? (
@@ -362,16 +334,12 @@ function AppInner() {
           remixControl={remixControl}
           remixLoading={remixLoading}
           remixVersion={remixVersion}
-          authControls={authControls}
-          shareButton={
-            <ShareButton
-              documentId={currentDocumentId}
-              isAuthenticated={!!user}
-              onRequestSignIn={() => setShowAuthModal(true)}
-            />
-          }
           isAuthenticated={!!user}
           onRequestSignIn={() => setShowAuthModal(true)}
+          user={user}
+          onSignOut={signOut}
+          onShowHistory={() => setShowHistory(h => !h)}
+          onShare={handleShare}
         />
 
         {/* GuestBanner — bottom persistent nudge for non-signed-in users */}
@@ -409,6 +377,11 @@ function AppInner() {
         {creditSuccess && (
           <div style={styles.creditToast}>
             <span>✓</span> {creditSuccess}
+          </div>
+        )}
+        {toast && (
+          <div style={styles.creditToast}>
+            <span>✓</span> {toast}
           </div>
         )}
       </div>

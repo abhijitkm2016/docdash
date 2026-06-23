@@ -76,9 +76,10 @@ const modalStyles = {
 };
 
 // ── Export dropdown ───────────────────────────────────────────────────────────
-function ExportButton({ dashboardData, isAuthenticated, onRequestSignIn }) {
+function ExportButton({ dashboardData, isAuthenticated, onRequestSignIn, onShare }) {
   const [open,     setOpen]     = useState(false);
   const [showGate, setShowGate] = useState(false);
+  const [copying,  setCopying]  = useState(false);
   const ref = useRef(null);
 
   useEffect(() => {
@@ -100,22 +101,19 @@ function ExportButton({ dashboardData, isAuthenticated, onRequestSignIn }) {
     }
   }
 
-  function handleHtml() {
-    exportToHtml(dashboardData);
+  function handleHtml() { exportToHtml(dashboardData); setOpen(false); }
+  function handlePdf()  { exportToPdf(dashboardData);  setOpen(false); }
+  function handlePpt()  { exportToPpt(dashboardData);  setOpen(false); }
+
+  async function handleShare() {
+    if (!isAuthenticated) { setOpen(false); onRequestSignIn?.(); return; }
     setOpen(false);
+    setCopying(true);
+    await onShare?.();
+    setTimeout(() => setCopying(false), 2500);
   }
 
-  function handlePdf() {
-    exportToPdf(dashboardData);
-    setOpen(false);
-  }
-
-  function handlePpt() {
-    exportToPpt(dashboardData);
-    setOpen(false);
-  }
-
-  const options = [
+  const exportOptions = [
     { label: '🌐 HTML Dashboard', action: handleHtml, desc: 'Interactive web file' },
     { label: '📄 PDF Report',     action: handlePdf,  desc: 'Structured analyst report' },
     { label: '📊 PPT Deck',       action: handlePpt,  desc: '5-slide presentation' },
@@ -129,7 +127,8 @@ function ExportButton({ dashboardData, isAuthenticated, onRequestSignIn }) {
         aria-haspopup="true"
         aria-expanded={open || showGate}
       >
-        ⬇ Export <span style={{ fontSize: '10px', opacity: 0.6, display: 'inline-block', transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s' }}>▼</span>
+        {copying ? '✓ Link copied' : '⬇ Export'}{' '}
+        <span style={{ fontSize: '10px', opacity: 0.6, display: 'inline-block', transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s' }}>▼</span>
       </button>
       {showGate && (
         <AuthGate
@@ -140,25 +139,27 @@ function ExportButton({ dashboardData, isAuthenticated, onRequestSignIn }) {
       )}
       {isAuthenticated && open && (
         <div style={exportStyles.dropdown}>
-          {options.map((opt, idx) => (
+          {exportOptions.map((opt, idx) => (
             <button
               key={opt.label}
               onClick={opt.action}
-              style={{
-                ...exportStyles.item,
-                borderBottom: idx < options.length - 1 ? '1px solid var(--card-border)' : 'none',
-              }}
+              style={{ ...exportStyles.item, borderBottom: '1px solid var(--card-border)' }}
               onMouseEnter={e => { e.currentTarget.style.background = 'var(--table-header-bg)'; }}
               onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}
             >
-              <span style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-primary)', display: 'block' }}>
-                {opt.label}
-              </span>
-              <span style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px', display: 'block' }}>
-                {opt.desc}
-              </span>
+              <span style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-primary)', display: 'block' }}>{opt.label}</span>
+              <span style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px', display: 'block' }}>{opt.desc}</span>
             </button>
           ))}
+          <button
+            onClick={handleShare}
+            style={{ ...exportStyles.item, borderBottom: 'none' }}
+            onMouseEnter={e => { e.currentTarget.style.background = 'var(--table-header-bg)'; }}
+            onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}
+          >
+            <span style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-primary)', display: 'block' }}>↗ Share as Link</span>
+            <span style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px', display: 'block' }}>Copy sharable URL</span>
+          </button>
         </div>
       )}
     </div>
@@ -203,13 +204,109 @@ const exportStyles = {
 };
 
 // ── Theme toggle ──────────────────────────────────────────────────────────────
-function ThemeToggle() {
+function ThemeToggle({ asIcon = false }) {
   const { theme, toggle } = useTheme();
+  const label = theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme';
+  const icon  = theme === 'dark' ? '☀️' : '🌙';
+  if (asIcon) {
+    return (
+      <button className="no-print" onClick={toggle} style={styles.iconBtn} aria-label={label} title={label}>
+        {icon}
+      </button>
+    );
+  }
   return (
-    <button className="no-print" onClick={toggle} style={styles.ctrlBtn}
-      aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} theme`}>
-      {theme === 'dark' ? '☀️ Switch to Light' : '🌙 Switch to Dark'}
+    <button className="no-print" onClick={toggle} style={styles.ctrlBtn} aria-label={label}>
+      {icon} {theme === 'dark' ? 'Switch to Light' : 'Switch to Dark'}
     </button>
+  );
+}
+
+// ── Icon button ───────────────────────────────────────────────────────────────
+function IconButton({ icon, label, onClick }) {
+  const [hovered, setHovered] = useState(false);
+  return (
+    <button
+      className="no-print"
+      onClick={onClick}
+      aria-label={label}
+      title={label}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        ...styles.iconBtn,
+        borderColor: hovered ? 'var(--accent)' : 'var(--card-border)',
+        color: hovered ? 'var(--accent)' : 'var(--text-secondary)',
+      }}
+    >
+      {icon}
+    </button>
+  );
+}
+
+// ── Profile menu ──────────────────────────────────────────────────────────────
+function ProfileMenu({ user, onSignOut, onRequestSignIn }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+
+  useEffect(() => {
+    function handler(e) {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+    }
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  if (!user) {
+    return (
+      <button
+        className="no-print"
+        onClick={onRequestSignIn}
+        style={styles.signInBtn}
+      >
+        Sign in
+      </button>
+    );
+  }
+
+  const name = user.user_metadata?.full_name || user.email || '';
+  const initials = name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map(w => w[0].toUpperCase())
+    .join('') || '?';
+
+  return (
+    <div ref={ref} style={{ position: 'relative' }} className="no-print">
+      <button
+        onClick={() => setOpen(o => !o)}
+        aria-label="Account menu"
+        style={styles.avatarBtn}
+        title={user.email}
+      >
+        {initials}
+      </button>
+      {open && (
+        <div style={styles.profileDropdown}>
+          <div style={styles.profileInfo}>
+            <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '2px' }}>
+              {user.user_metadata?.full_name || ''}
+            </div>
+            <div style={{ fontSize: '11px', color: 'var(--text-muted)', wordBreak: 'break-all' }}>
+              {user.email}
+            </div>
+          </div>
+          <div style={styles.profileDivider} />
+          <button
+            onClick={() => { setOpen(false); onSignOut?.(); }}
+            style={styles.signOutBtn}
+          >
+            Sign out
+          </button>
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -268,13 +365,15 @@ function ActiveFilterBar({ dimensions }) {
 function DashboardInner({
   data, standaloneHtml, sessionId,
   onReset, remixControl, remixLoading, remixVersion,
-  authControls, shareButton, readOnly,
-  isAuthenticated, onRequestSignIn,
+  readOnly, isAuthenticated, onRequestSignIn,
+  user, onSignOut, onShowHistory, onShowPrivacy, onShare,
 }) {
   const [showPrivacy, setShowPrivacy] = useState(false);
   const dimensions       = data.dimensions       || [];
   const chartAnnotations = data.chartAnnotations || [];
   const fieldMetadata    = data.fieldMetadata    || {};
+
+  const privacyHandler = onShowPrivacy || (() => setShowPrivacy(true));
 
   return (
     <>
@@ -286,41 +385,44 @@ function DashboardInner({
         transition: 'opacity 0.3s ease',
       }}
     >
-      {/* ── Topbar: brand + controls ─────────────────────────── */}
+      {/* ── Topbar ───────────────────────────────────────────── */}
       <div style={styles.topbar} className="no-print">
+        {/* Brand */}
         <div style={styles.brandRow}>
           <span style={styles.brandIcon}>⚡</span>
           <span style={styles.brandName}>DocDash</span>
           {remixVersion > 0 && (
-            <span style={styles.perspectiveBadge}>
-              Perspective #{remixVersion + 1}
-            </span>
+            <span style={styles.perspectiveBadge}>Perspective #{remixVersion + 1}</span>
           )}
         </div>
+
+        {/* Controls: secondary icons → primary actions → profile */}
         <div style={styles.controls}>
-          {authControls}
-          {shareButton}
-          <ThemeToggle />
+          {/* Secondary icon buttons */}
+          <IconButton icon="📂" label="Document history" onClick={onShowHistory} />
+          <ThemeToggle asIcon />
+          <IconButton icon="🛡️" label="Data & Privacy" onClick={privacyHandler} />
+
+          <div style={styles.topbarDivider} />
+
+          {/* Primary actions */}
           {!readOnly && (
             <ExportButton
               dashboardData={data}
               isAuthenticated={isAuthenticated}
               onRequestSignIn={onRequestSignIn}
+              onShare={onShare}
             />
           )}
           {!readOnly && remixControl}
-          <button
-            onClick={() => setShowPrivacy(true)}
-            style={styles.privacyLink}
-            aria-label="Data and privacy information"
-          >
-            ℹ Data &amp; Privacy
-          </button>
           {!readOnly && (
-            <button onClick={onReset} style={styles.primaryBtn}>
-              ↑ New File
-            </button>
+            <button onClick={onReset} style={styles.primaryBtn}>↑ New File</button>
           )}
+
+          <div style={styles.topbarDivider} />
+
+          {/* Profile */}
+          <ProfileMenu user={user} onSignOut={onSignOut} onRequestSignIn={onRequestSignIn} />
         </div>
       </div>
 
@@ -433,6 +535,99 @@ const styles = {
     flexWrap: 'wrap',
     gap: '0.75rem',
     marginBottom: '1.5rem',
+    position: 'sticky',
+    top: 0,
+    zIndex: 100,
+    background: 'var(--surface, var(--card-bg))',
+    borderBottom: '1px solid var(--card-border)',
+    padding: '0.625rem 0',
+    marginLeft: '-1.5rem',
+    marginRight: '-1.5rem',
+    paddingLeft: '1.5rem',
+    paddingRight: '1.5rem',
+  },
+  topbarDivider: {
+    width: 1,
+    height: 20,
+    background: 'var(--card-border)',
+    flexShrink: 0,
+  },
+  iconBtn: {
+    width: 34,
+    height: 34,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    background: 'transparent',
+    border: '1px solid var(--card-border)',
+    borderRadius: '0.5rem',
+    cursor: 'pointer',
+    fontSize: '1rem',
+    color: 'var(--text-secondary)',
+    transition: 'border-color 0.15s, color 0.15s',
+    padding: 0,
+    flexShrink: 0,
+  },
+  signInBtn: {
+    background: '#2563EB',
+    color: '#fff',
+    border: 'none',
+    borderRadius: '0.5rem',
+    padding: '0.375rem 1rem',
+    fontSize: '0.875rem',
+    fontWeight: 600,
+    cursor: 'pointer',
+    fontFamily: 'inherit',
+    whiteSpace: 'nowrap',
+  },
+  avatarBtn: {
+    width: 34,
+    height: 34,
+    borderRadius: '50%',
+    background: '#2563EB',
+    color: '#fff',
+    border: 'none',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontSize: '12px',
+    fontWeight: 700,
+    cursor: 'pointer',
+    letterSpacing: '0.03em',
+    flexShrink: 0,
+  },
+  profileDropdown: {
+    position: 'absolute',
+    top: 'calc(100% + 6px)',
+    right: 0,
+    background: 'var(--card-bg)',
+    border: '1px solid var(--card-border)',
+    borderRadius: '0.625rem',
+    boxShadow: '0 8px 24px rgba(0,0,0,0.15)',
+    minWidth: 200,
+    zIndex: 200,
+    overflow: 'hidden',
+  },
+  profileInfo: {
+    padding: '12px 14px',
+  },
+  profileDivider: {
+    height: 1,
+    background: 'var(--card-border)',
+    margin: '0',
+  },
+  signOutBtn: {
+    display: 'block',
+    width: '100%',
+    background: 'transparent',
+    border: 'none',
+    textAlign: 'left',
+    padding: '10px 14px',
+    cursor: 'pointer',
+    fontFamily: 'inherit',
+    fontSize: '0.875rem',
+    fontWeight: 500,
+    color: '#DC2626',
   },
   titleBlock: {
     marginBottom: '2rem',
