@@ -13,7 +13,7 @@ export function useDocuments() {
     setLoading(true)
     const { data, error } = await supabase
       .from('documents')
-      .select('id, file_name, title, created_at')
+      .select('id, file_name, title, created_at, mode')
       .order('created_at', { ascending: false })
       .limit(20)
     if (error) setError(error.message)
@@ -23,7 +23,7 @@ export function useDocuments() {
 
   useEffect(() => { fetchDocuments() }, [fetchDocuments])
 
-  const saveDocument = async ({ fileName, title, dashboardData }) => {
+  const saveDocument = async ({ fileName, title, dashboardData, mode = 'auto' }) => {
     if (!user) return null
     const { data, error } = await supabase
       .from('documents')
@@ -32,6 +32,7 @@ export function useDocuments() {
         file_name:      fileName,
         title:          title || fileName,
         dashboard_data: dashboardData,
+        mode,
       })
       .select()
       .single()

@@ -203,8 +203,131 @@ Rules:
 - Keep answers under 4 sentences unless genuine complexity requires more
 - Write for an executive — interpretive not descriptive`;
 
+// ── Mode-specific prompt additions ────────────────────────────────────────────
+function getModePrompt(mode) {
+  switch (mode) {
+    case 'finance':
+      return `
+ANALYSIS MODE: FINANCIAL
+
+You are analysing a financial document. Apply these priorities:
+
+KPIs to extract (pick the most relevant 3–5):
+- Revenue, Gross Margin %, EBITDA, Net Profit, YoY Growth %,
+  Operating Costs, Cash Position, Burn Rate, Cost-to-Income Ratio
+
+Charts to generate:
+- Revenue or key metric trend over time (line chart)
+- Cost or margin breakdown (bar chart)
+- Period-over-period comparison where data allows
+
+Narrative focus:
+- Profitability drivers and headwinds
+- Variance analysis vs prior period
+- Cost structure and efficiency
+- Forward-looking risks to margins
+
+WatchList focus:
+- Margin compression signals
+- Cost overruns or acceleration
+- Revenue concentration risk
+- Cash or liquidity flags
+`;
+
+    case 'hr':
+      return `
+ANALYSIS MODE: HR & WORKFORCE
+
+You are analysing an HR or workforce document. Apply these priorities:
+
+KPIs to extract (pick the most relevant 3–5):
+- Headcount, Attrition Rate %, Cost-per-Hire, Average Tenure,
+  Offer Acceptance Rate, Time-to-Fill, Absenteeism Rate,
+  Internal Promotion Rate, Training Hours per Employee
+
+Charts to generate:
+- Headcount trend over time (line chart)
+- Attrition or hiring by department/team (bar chart)
+- Tenure or diversity distribution where data allows
+
+Narrative focus:
+- Workforce health and stability
+- Retention risks and attrition drivers
+- Hiring velocity and pipeline health
+- Engagement or productivity signals
+
+WatchList focus:
+- High-attrition teams or departments
+- Roles with long time-to-fill
+- Flight risk signals
+- Compensation or benefits gaps
+`;
+
+    case 'sales':
+      return `
+ANALYSIS MODE: SALES & REVENUE
+
+You are analysing a sales or revenue document. Apply these priorities:
+
+KPIs to extract (pick the most relevant 3–5):
+- Total Revenue, Win Rate %, Average Deal Size, Pipeline Coverage,
+  Deal Velocity (days), Churn Rate, NRR %, CAC, LTV, Quota Attainment %
+
+Charts to generate:
+- Revenue trend by period (line chart)
+- Revenue or deals by segment, region, or product (bar chart)
+- Pipeline stage breakdown or win/loss trend where data allows
+
+Narrative focus:
+- Pipeline health and coverage ratio
+- Top performing segments or reps
+- Churn and expansion signals
+- Deal risk and stall patterns
+
+WatchList focus:
+- Deals at risk or stalled
+- Segments with declining win rate
+- Churn acceleration signals
+- Pipeline gaps vs target
+`;
+
+    case 'research':
+      return `
+ANALYSIS MODE: RESEARCH & ANALYSIS
+
+You are analysing a research report, study, or analytical document.
+Apply these priorities:
+
+KPIs to extract (pick the most relevant 3–5):
+- Key Findings Count, Data Sources Count, Sample Size,
+  Time Period Covered, Confidence Level, Coverage Gaps Identified,
+  Recommendations Count
+
+Charts to generate:
+- Theme or topic frequency (bar chart)
+- Source or methodology distribution where data allows
+- Timeline of findings or data points where data allows
+
+Narrative focus:
+- Synthesis of key claims and findings
+- Methodology strength and limitations
+- Areas of consensus vs contradiction
+- Evidence quality and gaps
+
+WatchList focus:
+- Unsupported or weakly evidenced claims
+- Data gaps or missing time periods
+- Conflicting findings between sources
+- Recommendations lacking clear evidence base
+`;
+
+    default: // 'auto'
+      return '';
+  }
+}
+
 // ── analyzeDocument ────────────────────────────────────────────────────────────
-async function analyzeDocument(parsedFile, fileName, { remixMode = false, userContext = '', guidedInstruction = '' } = {}) {
+async function analyzeDocument(parsedFile, fileName, { remixMode = false, userContext = '', guidedInstruction = '', mode = 'auto' } = {}) {
   const documentText = parsedFile.text;
 
   const remixInstruction = remixMode ? `
@@ -223,7 +346,7 @@ Do NOT produce the same dashboard twice.` : '';
   const message = await getClient().messages.create({
     model: 'claude-sonnet-4-6',
     max_tokens: 8192,
-    system: SYSTEM_PROMPT,
+    system: SYSTEM_PROMPT + getModePrompt(mode),
     messages: [
       {
         role: 'user',

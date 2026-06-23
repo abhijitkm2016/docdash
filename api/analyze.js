@@ -73,6 +73,7 @@ app.post('*', guestGenerationLimit, upload.array('files', 10), async (req, res) 
   send('heartbeat', { status: 'received' });
 
   const userContext = (req.body?.context || '').trim();
+  const mode = (req.body?.mode || 'auto').trim();
 
   try {
     const parsed = await Promise.all(
@@ -105,7 +106,7 @@ app.post('*', guestGenerationLimit, upload.array('files', 10), async (req, res) 
     send('heartbeat', { status: 'analysing' });
     const heartbeat = setInterval(() => send('heartbeat', { status: 'analysing' }), 4000);
 
-    const dashboardData  = await analyzeDocument(combinedParsed, combinedName, { userContext });
+    const dashboardData  = await analyzeDocument(combinedParsed, combinedName, { userContext, mode });
     const standaloneHtml = buildStandaloneHtml(dashboardData);
 
     const sessionId = crypto.randomUUID();
@@ -116,7 +117,7 @@ app.post('*', guestGenerationLimit, upload.array('files', 10), async (req, res) 
     });
 
     clearInterval(heartbeat);
-    send('result', { dashboardData, standaloneHtml, sessionId, truncated });
+    send('result', { dashboardData, standaloneHtml, sessionId, truncated, mode });
     send('done', {});
     res.end();
   } catch (err) {

@@ -47,8 +47,25 @@ export default function DocumentHistory({ onLoadDocument, currentDocumentId }) {
               fontSize: '12px', fontWeight: 500, color: '#1E293B',
               whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
               marginBottom: '2px',
+              display: 'flex', alignItems: 'center', gap: '4px',
             }}>
-              {doc.title || doc.file_name}
+              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {doc.title || doc.file_name}
+              </span>
+              {doc.mode && doc.mode !== 'auto' && (
+                <span style={{
+                  fontSize: '11px',
+                  padding: '2px 8px',
+                  borderRadius: '10px',
+                  background: '#EFF6FF',
+                  color: '#2563EB',
+                  fontWeight: '600',
+                  flexShrink: 0,
+                  textTransform: 'capitalize',
+                }}>
+                  {doc.mode}
+                </span>
+              )}
             </div>
             <div style={{ fontSize: '11px', color: '#94A3B8' }}>
               {new Date(doc.created_at).toLocaleDateString('en-IN', {

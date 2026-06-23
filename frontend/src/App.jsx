@@ -68,6 +68,7 @@ function AppInner() {
   const [showPricingModal,  setShowPricingModal]  = useState(false);
   const [creditSuccess,     setCreditSuccess]     = useState(null);
   const [guestLimitMessage, setGuestLimitMessage] = useState(null);
+  const [currentMode,       setCurrentMode]       = useState('auto');
 
   async function handleResult(data, fileName) {
     setResult(data);
@@ -77,6 +78,7 @@ function AppInner() {
     setRemixVersion(0);
     setAnimKey(k => k + 1);
     setError(null);
+    setCurrentMode(data.mode || 'auto');
 
     // Auto-save if signed in
     if (user && data.dashboardData) {
@@ -84,6 +86,7 @@ function AppInner() {
         fileName:      fileName || 'document',
         title:         data.dashboardData.title || fileName || 'document',
         dashboardData: data.dashboardData,
+        mode:          data.mode || 'auto',
       });
       if (saved) setCurrentDocumentId(saved.id);
     }
@@ -203,6 +206,7 @@ function AppInner() {
         fileName:      currentFileName || 'document',
         title:         result.dashboardData.title || currentFileName || 'document',
         dashboardData: result.dashboardData,
+        mode:          currentMode,
       }).then(saved => {
         if (saved) setCurrentDocumentId(saved.id);
       });

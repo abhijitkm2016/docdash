@@ -56,12 +56,13 @@ function truncateName(name, max = 42) {
 
 // ── Component ─────────────────────────────────────────────────────────────────
 export default function FileUpload({ onResult, onError, onWarning, onSampleLoad, onLoadingChange, onBeforeProcess, onAuthRequired }) {
-  const [files,       setFiles]       = useState([]);   // File[]
-  const [dragging,    setDragging]    = useState(false);
-  const [loading,     setLoading]     = useState(false);
-  const [progress,    setProgress]    = useState('');
-  const [ctxOpen,     setCtxOpen]     = useState(false);
-  const [context,     setContext]     = useState('');
+  const [files,         setFiles]         = useState([]);   // File[]
+  const [dragging,      setDragging]      = useState(false);
+  const [loading,       setLoading]       = useState(false);
+  const [progress,      setProgress]      = useState('');
+  const [ctxOpen,       setCtxOpen]       = useState(false);
+  const [context,       setContext]       = useState('');
+  const [selectedMode,  setSelectedMode]  = useState('auto');
 
   const inputRef   = useRef(null);   // initial upload input
   const addMoreRef = useRef(null);   // "add more files" input
@@ -173,7 +174,7 @@ export default function FileUpload({ onResult, onError, onWarning, onSampleLoad,
             if (data.truncated) {
               onWarning?.('Large document condensed for analysis — results reflect the full document\'s structure.');
             }
-            onResult(data, files[0]?.name || 'document');
+            onResult({ ...data, mode: data.mode || selectedMode }, files[0]?.name || 'document');
             return;
           } else if (eventType === 'error') {
             throw new Error(data.message);
@@ -211,6 +212,7 @@ export default function FileUpload({ onResult, onError, onWarning, onSampleLoad,
     const formData = new FormData();
     files.forEach(f => formData.append('files', f));
     if (context.trim()) formData.append('context', context.trim());
+    formData.append('mode', selectedMode);
     await runAnalysis(formData);
   }
 
@@ -286,6 +288,55 @@ export default function FileUpload({ onResult, onError, onWarning, onSampleLoad,
             style={{ display: 'none' }}
             onChange={e => { addFiles(e.target.files); e.target.value = ''; }}
           />
+
+          {/* Mode Selector */}
+          <div style={{ padding: '1.25rem 2rem 0' }}>
+            <p style={{
+              fontSize: '13px',
+              fontWeight: '600',
+              color: 'var(--text-secondary)',
+              marginBottom: '10px',
+              marginTop: 0,
+              textTransform: 'uppercase',
+              letterSpacing: '0.05em',
+            }}>
+              Analysis Mode
+            </p>
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+              {[
+                { id: 'auto',     label: '✨ Auto' },
+                { id: 'finance',  label: '💰 Finance' },
+                { id: 'hr',       label: '👥 HR' },
+                { id: 'sales',    label: '📈 Sales' },
+                { id: 'research', label: '🔬 Research' },
+              ].map(mode => (
+                <button
+                  key={mode.id}
+                  onClick={() => setSelectedMode(mode.id)}
+                  style={{
+                    padding: '6px 14px',
+                    borderRadius: '20px',
+                    border: selectedMode === mode.id
+                      ? '2px solid #2563EB'
+                      : '2px solid var(--border, #E2E8F0)',
+                    background: selectedMode === mode.id
+                      ? '#EFF6FF'
+                      : 'var(--surface, #FFFFFF)',
+                    color: selectedMode === mode.id
+                      ? '#2563EB'
+                      : 'var(--text-secondary, #64748B)',
+                    fontSize: '13px',
+                    fontWeight: selectedMode === mode.id ? '600' : '400',
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease',
+                    fontFamily: 'inherit',
+                  }}
+                >
+                  {mode.label}
+                </button>
+              ))}
+            </div>
+          </div>
 
           {/* Change 1 — Drop zone (no longer triggers generation) */}
           <div
