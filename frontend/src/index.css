@@ -91,6 +91,7 @@ input, button { font-family: inherit; }
 .remix-tooltip-wrapper {
   position: relative;
   display: inline-block;
+  cursor: inherit;
 }
 .remix-tooltip {
   visibility: hidden;

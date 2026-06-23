@@ -253,7 +253,6 @@ function AppInner() {
               opacity: isDisabled ? 0.5 : 1,
               animation: remixLoading ? 'pulse 1s ease-in-out infinite' : 'none',
               transition: 'all 0.15s ease',
-              pointerEvents: isDisabled ? 'none' : 'auto',
               fontFamily: 'inherit',
             }}
           >
