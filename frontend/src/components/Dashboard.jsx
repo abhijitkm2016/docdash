@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { FilterProvider, useFilter } from '../context/FilterContext';
 import AuthGate from './AuthGate';
 import { useTheme } from '../context/ThemeContext';
+import { exportToHtml } from '../utils/exportHtml';
 import { exportToPdf } from '../utils/exportPdf';
 import { exportToPpt } from '../utils/exportPpt';
 import KpiCard          from './KpiCard';
@@ -75,7 +76,7 @@ const modalStyles = {
 };
 
 // ── Export dropdown ───────────────────────────────────────────────────────────
-function ExportButton({ standaloneHtml, dashboardData, isAuthenticated, onRequestSignIn }) {
+function ExportButton({ dashboardData, isAuthenticated, onRequestSignIn }) {
   const [open,     setOpen]     = useState(false);
   const [showGate, setShowGate] = useState(false);
   const ref = useRef(null);
@@ -100,15 +101,7 @@ function ExportButton({ standaloneHtml, dashboardData, isAuthenticated, onReques
   }
 
   function handleHtml() {
-    if (!standaloneHtml) return;
-    const blob = new Blob([standaloneHtml], { type: 'text/html' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    const safeTitle = (dashboardData?.title || 'dashboard').replace(/[^a-z0-9]/gi, '-').toLowerCase();
-    a.download = `${safeTitle}.html`;
-    a.click();
-    URL.revokeObjectURL(url);
+    exportToHtml(dashboardData);
     setOpen(false);
   }
 
@@ -310,7 +303,6 @@ function DashboardInner({
           <ThemeToggle />
           {!readOnly && (
             <ExportButton
-              standaloneHtml={standaloneHtml}
               dashboardData={data}
               isAuthenticated={isAuthenticated}
               onRequestSignIn={onRequestSignIn}
