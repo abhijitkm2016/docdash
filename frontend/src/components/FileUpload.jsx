@@ -289,20 +289,28 @@ export default function FileUpload({ onResult, onError, onWarning, onSampleLoad,
             onChange={e => { addFiles(e.target.files); e.target.value = ''; }}
           />
 
-          {/* Mode Selector */}
+          {/* Analysis Mode — Segmented Control */}
           <div style={{ padding: '1.25rem 2rem 0' }}>
             <p style={{
-              fontSize: '13px',
-              fontWeight: '600',
+              fontSize: '11px',
+              fontWeight: '700',
               color: 'var(--text-secondary)',
               marginBottom: '10px',
               marginTop: 0,
               textTransform: 'uppercase',
-              letterSpacing: '0.05em',
+              letterSpacing: '0.08em',
             }}>
               Analysis Mode
             </p>
-            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+            <div style={{
+              display: 'flex',
+              width: '100%',
+              background: 'var(--border)',
+              borderRadius: '10px',
+              padding: '3px',
+              gap: '2px',
+              boxSizing: 'border-box',
+            }}>
               {[
                 { id: 'auto',     label: '✨ Auto' },
                 { id: 'finance',  label: '💰 Finance' },
@@ -314,22 +322,25 @@ export default function FileUpload({ onResult, onError, onWarning, onSampleLoad,
                   key={mode.id}
                   onClick={() => setSelectedMode(mode.id)}
                   style={{
-                    padding: '6px 14px',
-                    borderRadius: '20px',
-                    border: selectedMode === mode.id
-                      ? '2px solid #2563EB'
-                      : '2px solid var(--border, #E2E8F0)',
+                    flex: 1,
+                    padding: '7px 4px',
+                    borderRadius: '7px',
+                    border: 'none',
                     background: selectedMode === mode.id
-                      ? '#EFF6FF'
-                      : 'var(--surface, #FFFFFF)',
+                      ? 'var(--surface-elevated, #FFFFFF)'
+                      : 'transparent',
                     color: selectedMode === mode.id
                       ? '#2563EB'
-                      : 'var(--text-secondary, #64748B)',
-                    fontSize: '13px',
-                    fontWeight: selectedMode === mode.id ? '600' : '400',
+                      : 'var(--text-secondary)',
+                    fontSize: '12px',
+                    fontWeight: selectedMode === mode.id ? '700' : '500',
                     cursor: 'pointer',
                     transition: 'all 0.15s ease',
+                    whiteSpace: 'nowrap',
                     fontFamily: 'inherit',
+                    boxShadow: selectedMode === mode.id
+                      ? '0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.08)'
+                      : 'none',
                   }}
                 >
                   {mode.label}
