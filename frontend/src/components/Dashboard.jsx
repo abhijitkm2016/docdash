@@ -29,8 +29,14 @@ function PrivacyModal({ onClose }) {
       <div style={modalStyles.box} onClick={e => e.stopPropagation()} role="dialog" aria-modal="true">
         <button style={modalStyles.close} onClick={onClose} aria-label="Close">×</button>
         <p style={modalStyles.heading}>Data &amp; Privacy</p>
+        <div style={modalStyles.trustBox}>
+          <p style={modalStyles.trustText}>
+            Your documents are processed securely via the Anthropic API.
+            DocDash does not store your uploaded files.
+            Generated dashboards are saved to your account only when you are signed in.
+          </p>
+        </div>
         <p style={modalStyles.body}>
-          Your documents are processed via the Anthropic API and are not stored by DocDash.
           No document content is retained after your session ends. For sensitive documents,
           please review Anthropic's data usage policy at{' '}
           <a href="https://www.anthropic.com/privacy" target="_blank" rel="noopener noreferrer"
@@ -72,6 +78,19 @@ const modalStyles = {
   },
   body: {
     fontSize: '0.875rem', color: 'var(--text-secondary)', lineHeight: 1.65,
+  },
+  trustBox: {
+    background: 'var(--accent-muted, #EFF6FF)',
+    border: '1px solid var(--accent-border, #BFDBFE)',
+    borderRadius: '0.5rem',
+    padding: '0.75rem 1rem',
+    marginBottom: '0.875rem',
+  },
+  trustText: {
+    fontSize: '0.8125rem',
+    color: 'var(--text-secondary)',
+    lineHeight: 1.6,
+    margin: 0,
   },
 };
 

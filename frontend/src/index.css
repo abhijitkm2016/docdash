@@ -85,6 +85,8 @@ input, button { font-family: inherit; }
 @keyframes fadeInUp  { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes fadeIn    { from { opacity: 0; } to { opacity: 1; } }
 
+.doc-row:hover .doc-delete-btn { opacity: 1 !important; }
+
 *:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;

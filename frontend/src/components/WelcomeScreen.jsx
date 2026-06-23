@@ -199,6 +199,15 @@ export default function WelcomeScreen({ onSignIn, onContinueAsGuest }) {
       }}>
         Start free · Credits never expire · Restored automatically on errors
       </div>
+
+      <p style={{
+        fontSize: '12px',
+        color: 'var(--text-secondary)',
+        textAlign: 'center',
+        marginTop: '12px',
+      }}>
+        🔒 Your documents are never stored. Processed securely via Anthropic API.
+      </p>
     </div>
   )
 }
