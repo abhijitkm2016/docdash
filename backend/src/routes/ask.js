@@ -5,21 +5,31 @@ const sessionStore       = require('../services/sessionStore');
 const router = express.Router();
 
 router.post('/', async (req, res) => {
-  const { sessionId, question } = req.body;
+  const { sessionId, question, dashboardData: bodyDashboardData } = req.body;
 
-  if (!sessionId || !question?.trim()) {
-    return res.status(400).json({ error: 'sessionId and question are required' });
+  if (!question?.trim()) {
+    return res.status(400).json({ error: 'question is required' });
   }
 
-  const session = await sessionStore.get(sessionId);
-  if (!session) {
+  let dashboardData = null;
+
+  if (sessionId) {
+    const session = await sessionStore.get(sessionId);
+    if (session) dashboardData = session.dashboardData;
+  }
+
+  if (!dashboardData && bodyDashboardData) {
+    dashboardData = bodyDashboardData;
+  }
+
+  if (!dashboardData) {
     return res.status(404).json({
-      error: 'Session not found or expired. Please re-upload your file.',
+      error: 'Session expired. Please regenerate the dashboard to ask questions.',
     });
   }
 
   try {
-    const answer = await answerQuestion(session.dashboardData, question.trim());
+    const answer = await answerQuestion(dashboardData, question.trim());
     res.json({ answer });
   } catch (err) {
     console.error('Ask error:', err.message);

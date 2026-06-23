@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 
-export default function AskYourData({ sessionId }) {
+export default function AskYourData({ sessionId, dashboardData }) {
   const [question, setQuestion]   = useState('');
   const [history, setHistory]     = useState([]);
   const [loading, setLoading]     = useState(false);
@@ -23,7 +23,7 @@ export default function AskYourData({ sessionId }) {
       const res = await fetch('/api/ask', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sessionId, question: q }),
+        body: JSON.stringify({ sessionId, question: q, dashboardData: dashboardData || null }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to get answer');

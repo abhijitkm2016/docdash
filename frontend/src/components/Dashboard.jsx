@@ -372,12 +372,10 @@ function DashboardInner({
         </div>
       </Section>
 
-      {/* ── Ask Your Data (no heading — placeholder IS the invite) */}
-      {sessionId && (
-        <Section>
-          <AskYourData sessionId={sessionId} />
-        </Section>
-      )}
+      {/* ── Ask Your Data ─────────────────────────────────────── */}
+      <Section title="Ask Your Data">
+        <AskYourData sessionId={sessionId} dashboardData={data} />
+      </Section>
 
       {/* ── Analysis ──────────────────────────────────────────── */}
       {data.narrative && (
