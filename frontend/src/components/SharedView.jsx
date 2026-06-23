@@ -34,7 +34,7 @@ export default function SharedView({ shareToken }) {
   )
 
   return (
-    <div>
+    <div style={{ paddingBottom: '60px' }}>
       <div style={{
         background: '#F0FDF4', borderBottom: '1px solid #BBF7D0',
         padding: '8px 24px', textAlign: 'center',
@@ -44,6 +44,37 @@ export default function SharedView({ shareToken }) {
         <a href="/" style={{ color: '#15803D', fontWeight: 500 }}>Create your own →</a>
       </div>
       <Dashboard data={doc.dashboard_data} readOnly={true} />
+
+      {/* Watermark — growth loop for shared views */}
+      <div style={{
+        position: 'fixed',
+        bottom: 0, left: 0, right: 0,
+        height: '44px',
+        background: '#0F172A',
+        borderTop: '1px solid #1E293B',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: '10px',
+        zIndex: 1000,
+        padding: '0 20px',
+      }}>
+        <span style={{ fontSize: '13px', color: '#94A3B8' }}>Made with</span>
+        <span style={{ fontSize: '13px', fontWeight: '700', color: '#FFFFFF', display: 'flex', alignItems: 'center', gap: '4px' }}>
+          ⚡ DocDash
+        </span>
+        <span style={{ width: '1px', height: '14px', background: '#334155' }} />
+        <a
+          href="https://docdash-dusky.vercel.app"
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{ fontSize: '13px', fontWeight: '600', color: '#2563EB', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '4px', transition: 'color 0.15s ease' }}
+          onMouseEnter={e => e.currentTarget.style.color = '#60A5FA'}
+          onMouseLeave={e => e.currentTarget.style.color = '#2563EB'}
+        >
+          Try it free →
+        </a>
+      </div>
     </div>
   )
 }
