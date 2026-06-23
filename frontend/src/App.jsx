@@ -228,49 +228,50 @@ function AppInner() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
-  // Remix control — always visible; disabled when no live session (history loads)
-  const remixControl = (
-    <div style={{ position: 'relative', display: 'inline-block' }}>
-      <button
-        onClick={() => setShowRemixPopover(v => !v)}
-        disabled={!sessionId || remixLoading}
-        title={
-          !sessionId
-            ? "Remix is available immediately after generation — we don't store your document"
-            : remixLoading
-              ? 'Remixing…'
-              : 'Generate a new perspective on this document'
-        }
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '6px',
-          padding: '7px 14px',
-          borderRadius: '8px',
-          border: '1.5px solid var(--border)',
-          background: 'var(--surface)',
-          color: !sessionId ? 'var(--text-secondary)' : 'var(--text-primary)',
-          fontSize: '13px',
-          fontWeight: '600',
-          cursor: !sessionId ? 'not-allowed' : 'pointer',
-          opacity: remixLoading ? 0.5 : !sessionId ? 0.5 : 1,
-          animation: remixLoading ? 'pulse 1s ease-in-out infinite' : 'none',
-          transition: 'all 0.15s ease',
-          fontFamily: 'inherit',
-        }}
-      >
-        🔀 {remixLoading ? 'Remixing…' : 'Remix'}
-      </button>
-      {showRemixPopover && sessionId && (
-        <RemixPopover
-          onAutoRemix={handleAutoRemix}
-          onGuidedRemix={handleGuidedRemix}
-          onClose={() => setShowRemixPopover(false)}
-          loading={remixLoading}
-        />
-      )}
-    </div>
-  );
+  // Remix control — always visible; custom tooltip works even when disabled
+  const remixControl = (() => {
+    const isDisabled = !sessionId || remixLoading;
+    const tooltipText = !sessionId
+      ? 'Upload your document again to remix — DocDash keeps your dashboards, not your files.'
+      : remixLoading
+        ? 'Remixing…'
+        : 'Generate a new perspective on this document';
+
+    return (
+      <div style={{ position: 'relative', display: 'inline-block' }}>
+        <div className="remix-tooltip-wrapper">
+          <button
+            onClick={() => { if (!isDisabled) setShowRemixPopover(v => !v); }}
+            disabled={isDisabled}
+            style={{
+              display: 'flex', alignItems: 'center', gap: '6px',
+              padding: '7px 14px', borderRadius: '8px',
+              border: '1.5px solid var(--border)', background: 'var(--surface)',
+              color: isDisabled ? 'var(--text-secondary)' : 'var(--text-primary)',
+              fontSize: '13px', fontWeight: '600',
+              cursor: isDisabled ? 'not-allowed' : 'pointer',
+              opacity: isDisabled ? 0.5 : 1,
+              animation: remixLoading ? 'pulse 1s ease-in-out infinite' : 'none',
+              transition: 'all 0.15s ease',
+              pointerEvents: isDisabled ? 'none' : 'auto',
+              fontFamily: 'inherit',
+            }}
+          >
+            🔀 {remixLoading ? 'Remixing…' : 'Remix'}
+          </button>
+          <div className="remix-tooltip">{tooltipText}</div>
+        </div>
+        {showRemixPopover && sessionId && (
+          <RemixPopover
+            onAutoRemix={handleAutoRemix}
+            onGuidedRemix={handleGuidedRemix}
+            onClose={() => setShowRemixPopover(false)}
+            loading={remixLoading}
+          />
+        )}
+      </div>
+    );
+  })();
 
   // ── History sidebar — position:fixed, renders over any view ─────────────────
   const historySidebar = showHistory && (
