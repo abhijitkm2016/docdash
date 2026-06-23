@@ -21,6 +21,7 @@ import PurchaseHistory  from './components/PurchaseHistory';
 function detectErrorType(msg) {
   if (!msg) return 'generic';
   const m = msg.toLowerCase();
+  if (m.includes('billing') || m.includes('quota') || m.includes('overloaded') || m.includes('rate limit') || m.includes('authentication') || m.includes('credit was not charged')) return 'service';
   if (m.includes('10mb') || m.includes('too large') || m.includes('413') || m.includes('size limit') || m.includes('exceeds')) return 'filesize';
   if (m.includes('failed to fetch') || m.includes('networkerror') || m.includes('network') || m.includes('connection')) return 'network';
   if (m.includes('timed out') || m.includes('claude') || m.includes('server error 5') || m.includes('processing') || m.includes('analysis')) return 'processing';

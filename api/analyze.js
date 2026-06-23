@@ -123,11 +123,28 @@ app.post('*', guestGenerationLimit, upload.array('files', 10), async (req, res) 
   } catch (err) {
     console.error('Analysis error:', JSON.stringify({
       message: err.message,
-      name:    err.name,
       status:  err.status,
-      stack:   err.stack,
-    }, null, 2));
-    send('error', { message: err.message || 'Analysis failed' });
+    }));
+
+    const msg    = err.message || '';
+    const status = err.status || err.statusCode || 0;
+
+    let userMessage;
+    if (status === 529 || msg.toLowerCase().includes('overloaded')) {
+      userMessage = 'Claude AI is currently overloaded. Your credit was not charged — please try again in a moment.';
+    } else if (status === 402 || msg.toLowerCase().includes('credit') || msg.toLowerCase().includes('billing') || msg.toLowerCase().includes('quota') || msg.toLowerCase().includes('exceeded')) {
+      userMessage = 'Service temporarily unavailable due to a billing limit. Your credit was not charged — please try again later.';
+    } else if (status === 429 || msg.toLowerCase().includes('rate limit')) {
+      userMessage = 'Too many requests. Your credit was not charged — please wait a moment and try again.';
+    } else if (status === 401 || msg.toLowerCase().includes('authentication')) {
+      userMessage = 'API authentication error. Your credit was not charged — please contact support.';
+    } else if (msg.toLowerCase().includes('timeout') || msg.toLowerCase().includes('timed out')) {
+      userMessage = 'Analysis timed out — the document may be too large or complex. Your credit was not charged — try a smaller document.';
+    } else {
+      userMessage = 'Analysis failed. Your credit was not charged — please try again.';
+    }
+
+    send('error', { message: userMessage });
     res.end();
   }
 });

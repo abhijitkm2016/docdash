@@ -19,6 +19,11 @@ const ERROR_CONFIG = {
     title:    'File too large',
     subtitle: 'Please upload a file under 10MB.',
   },
+  service: {
+    icon:     '⚠️',
+    title:    'Service Unavailable',
+    subtitle: null,
+  },
   generic: {
     icon:     '⚠️',
     title:    'Something went wrong',
