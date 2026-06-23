@@ -372,6 +372,13 @@ function DashboardInner({
         </div>
       </Section>
 
+      {/* ── Ask Your Data (no heading — placeholder IS the invite) */}
+      {sessionId && (
+        <Section>
+          <AskYourData sessionId={sessionId} />
+        </Section>
+      )}
+
       {/* ── Analysis ──────────────────────────────────────────── */}
       {data.narrative && (
         <Section title="Analysis">
@@ -383,13 +390,6 @@ function DashboardInner({
       {data.watchList && (
         <Section title="Executive Watch List">
           <WatchList watchList={data.watchList} />
-        </Section>
-      )}
-
-      {/* ── Ask Your Data (no heading — placeholder IS the invite) */}
-      {sessionId && (
-        <Section>
-          <AskYourData sessionId={sessionId} />
         </Section>
       )}
 
