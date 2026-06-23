@@ -56,7 +56,7 @@ export default function LoadingState() {
           <div style={styles.barFill} />
         </div>
 
-        <div style={styles.hint}>This usually takes 10–20 seconds</div>
+        <div style={styles.hint}>This may take up to a minute</div>
       </div>
     </>
   );
