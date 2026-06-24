@@ -74,6 +74,16 @@ export default function AskYourData({ sessionId, dashboardData }) {
 
       <div ref={bottomRef} />
 
+      <p style={{
+        fontSize: '0.75rem',
+        color: 'var(--text-muted)',
+        textAlign: 'center',
+        opacity: 0.7,
+        margin: '0 0 0.25rem',
+      }}>
+        Answers are based on this dashboard's output, not the raw source document.
+      </p>
+
       {/* Input row */}
       <div style={styles.inputRow}>
         <textarea
