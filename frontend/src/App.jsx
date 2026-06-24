@@ -17,6 +17,7 @@ import GuestBanner      from './components/GuestBanner';
 import PricingModal     from './components/PricingModal';
 import RemixPopover     from './components/RemixPopover';
 import PurchaseHistory  from './components/PurchaseHistory';
+import AdminPanel       from './components/AdminPanel';
 
 function detectErrorType(msg) {
   if (!msg) return 'generic';
@@ -72,6 +73,7 @@ function AppInner() {
   const [guestLimitMessage, setGuestLimitMessage] = useState(null);
   const [currentMode,       setCurrentMode]       = useState('auto');
   const [toast,             setToast]             = useState(null);
+  const [showAdminPanel,    setShowAdminPanel]    = useState(false);
 
   async function handleResult(data, fileName) {
     setResult(data);
@@ -501,6 +503,9 @@ function AppInner() {
         )}
         {user ? (
           <>
+            {user?.id === '363022d8-cfc1-4e58-ac29-ef9fe6ac287e' && (
+              <button onClick={() => setShowAdminPanel(true)} style={{ fontSize: '12px', color: '#64748B', background: 'transparent', border: '1px solid #E2E8F0', borderRadius: '7px', padding: '5px 12px', cursor: 'pointer', fontFamily: 'inherit' }}>⚙️ Admin</button>
+            )}
             <button
               onClick={() => setShowPricingModal(true)}
               style={creditChipStyle}
@@ -552,6 +557,7 @@ function AppInner() {
             <span>✓</span> {creditSuccess}
           </div>
         )}
+        {showAdminPanel && <AdminPanel user={user} onClose={() => setShowAdminPanel(false)} />}
       </>
     );
   }
@@ -619,6 +625,7 @@ function AppInner() {
           <span>✓</span> {creditSuccess}
         </div>
       )}
+      {showAdminPanel && <AdminPanel user={user} onClose={() => setShowAdminPanel(false)} />}
     </>
   );
 }
