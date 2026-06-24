@@ -55,6 +55,13 @@ export default function WelcomeScreen({ onSignIn, onContinueAsGuest }) {
         </div>
 
         <p style={{
+          fontSize: '12px', color: '#94A3B8',
+          marginBottom: '12px', letterSpacing: '0.01em'
+        }}>
+          Trusted by analysts at finance, HR, and consulting firms
+        </p>
+
+        <p style={{
           fontSize: '15px', color: '#64748B',
           marginBottom: '32px', lineHeight: 1.6
         }}>
