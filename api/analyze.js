@@ -74,6 +74,7 @@ app.post('*', guestGenerationLimit, upload.array('files', 10), async (req, res) 
 
   const userContext = (req.body?.context || '').trim();
   const mode = (req.body?.mode || 'auto').trim();
+  const deep = req.body?.deep === 'true';
 
   try {
     const parsed = await Promise.all(
@@ -82,7 +83,7 @@ app.post('*', guestGenerationLimit, upload.array('files', 10), async (req, res) 
 
     const condensedParsed = parsed.map(p => ({
       ...p,
-      text: condenseText(p),
+      text: condenseText(p, deep),
     }));
     const truncated = parsed.some((p, i) => condensedParsed[i].text.length < p.text.length);
 
@@ -106,7 +107,7 @@ app.post('*', guestGenerationLimit, upload.array('files', 10), async (req, res) 
     send('heartbeat', { status: 'analysing' });
     const heartbeat = setInterval(() => send('heartbeat', { status: 'analysing' }), 4000);
 
-    const dashboardData  = await analyzeDocument(combinedParsed, combinedName, { userContext, mode });
+    const dashboardData  = await analyzeDocument(combinedParsed, combinedName, { userContext, mode, deep });
     const standaloneHtml = buildStandaloneHtml(dashboardData);
 
     const sessionId = crypto.randomUUID();
@@ -117,7 +118,7 @@ app.post('*', guestGenerationLimit, upload.array('files', 10), async (req, res) 
     });
 
     clearInterval(heartbeat);
-    send('result', { dashboardData, standaloneHtml, sessionId, truncated, mode });
+    send('result', { dashboardData, standaloneHtml, sessionId, truncated, mode, deep });
     send('done', {});
     res.end();
   } catch (err) {

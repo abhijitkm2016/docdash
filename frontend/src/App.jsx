@@ -96,14 +96,18 @@ function AppInner() {
 
     // Deduct credit after successful generation
     if (user) {
-      await deductCredit(fileName || 'Document generation');
+      const creditsUsed = data.deep ? 5 : 1;
+      await deductCredit(
+        data.deep ? `Deep Analysis — ${fileName || 'document'}` : fileName || 'Document generation',
+        creditsUsed
+      );
     }
   }
 
   // Called by FileUpload before processing starts — returns false to abort
-  async function handleBeforeProcess() {
+  async function handleBeforeProcess(creditsNeeded = 1) {
     if (user) {
-      if (!credits || credits.credits_remaining <= 0) {
+      if (!credits || credits.credits_remaining < creditsNeeded) {
         setShowPricingModal(true);
         return false;
       }

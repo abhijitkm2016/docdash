@@ -41,14 +41,14 @@ export function useCredits() {
 
   useEffect(() => { fetchCredits() }, [fetchCredits])
 
-  const deductCredit = async (description = 'Document generation') => {
+  const deductCredit = async (description = 'Document generation', amount = 1) => {
     if (!user || !credits) return false
     if (credits.credits_remaining <= 0) return false
     const { data, error } = await supabase
       .from('credits')
       .update({
-        credits_remaining: credits.credits_remaining - 1,
-        credits_used: credits.credits_used + 1
+        credits_remaining: credits.credits_remaining - amount,
+        credits_used: credits.credits_used + amount
       })
       .eq('user_id', user.id)
       .select()
@@ -58,7 +58,7 @@ export function useCredits() {
     supabase.from('transactions').insert({
       user_id: user.id,
       transaction_type: 'deduction',
-      credits_delta: -1,
+      credits_delta: -amount,
       currency: 'INR',
       description
     }).then(() => {})

@@ -7,23 +7,25 @@
  *   PDF / Word / PPT / multi — evenly-spaced chunks from start, middle, end
  */
 
-const MAX_CHARS = 8000;
+const MAX_CHARS      = 8000;
+const MAX_CHARS_DEEP = 120000;
 
 // ── Public entry point ────────────────────────────────────────────────────────
-function condenseText(parsedFile) {
+function condenseText(parsedFile, deep = false) {
   const { type, text } = parsedFile;
+  const limit = deep ? MAX_CHARS_DEEP : MAX_CHARS;
 
-  if (!text || text.length <= MAX_CHARS) return text;
+  if (!text || text.length <= limit) return text;
 
   if (type === 'excel' || type === 'csv') {
-    return _condenseTabular(parsedFile);
+    return _condenseTabular(parsedFile, limit);
   }
 
-  return _condenseLinear(text);
+  return _condenseLinear(text, limit);
 }
 
 // ── Tabular condenser (Excel / CSV) ──────────────────────────────────────────
-function _condenseTabular(parsedFile) {
+function _condenseTabular(parsedFile, limit) {
   const { sheets, sheetNames, rows, type } = parsedFile;
   let out = '';
 
@@ -32,11 +34,11 @@ function _condenseTabular(parsedFile) {
   } else if (sheets && sheetNames) {
     for (const name of sheetNames) {
       out += _sheetSummary(name, sheets[name] || []);
-      if (out.length >= MAX_CHARS) break;
+      if (out.length >= limit) break;
     }
   }
 
-  return out.slice(0, MAX_CHARS);
+  return out.slice(0, limit);
 }
 
 function _sheetSummary(name, rows) {
@@ -91,10 +93,10 @@ function _sheetSummary(name, rows) {
 }
 
 // ── Linear condenser (PDF / Word / PPT / multi) ───────────────────────────────
-function _condenseLinear(text) {
+function _condenseLinear(text, limit) {
   // Reserve ~120 chars for the two omission markers, then divide remainder
   const MARKER_BUDGET = 120;
-  const budget    = MAX_CHARS - MARKER_BUDGET;
+  const budget    = limit - MARKER_BUDGET;
   const startLen  = Math.floor(budget * 0.4);
   const midLen    = Math.floor(budget * 0.3);
   const endLen    = budget - startLen - midLen;

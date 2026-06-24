@@ -327,7 +327,7 @@ WatchList focus:
 }
 
 // ── analyzeDocument ────────────────────────────────────────────────────────────
-async function analyzeDocument(parsedFile, fileName, { remixMode = false, userContext = '', guidedInstruction = '', mode = 'auto' } = {}) {
+async function analyzeDocument(parsedFile, fileName, { remixMode = false, userContext = '', guidedInstruction = '', mode = 'auto', deep = false } = {}) {
   const documentText = parsedFile.text;
 
   const remixInstruction = remixMode ? `
@@ -345,7 +345,7 @@ Do NOT produce the same dashboard twice.` : '';
 
   const message = await getClient().messages.create({
     model: 'claude-sonnet-4-6',
-    max_tokens: 8192,
+    max_tokens: deep ? 16000 : 8192,
     system: SYSTEM_PROMPT + getModePrompt(mode),
     messages: [
       {

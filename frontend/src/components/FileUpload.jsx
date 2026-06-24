@@ -48,6 +48,15 @@ function formatSize(b) {
     ? `${(b / 1024).toFixed(1)} KB`
     : `${(b / (1024 * 1024)).toFixed(1)} MB`;
 }
+function shouldSuggestDeep(files) {
+  return files.some(f => {
+    const ext = getExt(f.name);
+    if (['pdf', 'docx', 'doc', 'pptx', 'ppt'].includes(ext) && f.size > 500 * 1024) return true;
+    if (['xlsx', 'xls'].includes(ext) && f.size > 200 * 1024) return true;
+    return false;
+  });
+}
+
 function truncateName(name, max = 42) {
   if (name.length <= max) return name;
   const ext = name.includes('.') ? name.split('.').pop() : '';
@@ -63,6 +72,7 @@ export default function FileUpload({ onResult, onError, onWarning, onSampleLoad,
   const [ctxOpen,       setCtxOpen]       = useState(false);
   const [context,       setContext]       = useState('');
   const [selectedMode,  setSelectedMode]  = useState('auto');
+  const [deep,          setDeep]          = useState(false);
 
   const inputRef   = useRef(null);   // initial upload input
   const addMoreRef = useRef(null);   // "add more files" input
@@ -203,7 +213,8 @@ export default function FileUpload({ onResult, onError, onWarning, onSampleLoad,
     }
     // Credit/guest gate — must run before loading state so modal can appear cleanly
     if (onBeforeProcess) {
-      const allowed = await onBeforeProcess();
+      const creditsNeeded = deep ? 5 : 1;
+      const allowed = await onBeforeProcess(creditsNeeded);
       if (!allowed) return;
     }
     // Set loading state first — before building formData or awaiting anything
@@ -213,6 +224,7 @@ export default function FileUpload({ onResult, onError, onWarning, onSampleLoad,
     files.forEach(f => formData.append('files', f));
     if (context.trim()) formData.append('context', context.trim());
     formData.append('mode', selectedMode);
+    formData.append('deep', String(deep));
     await runAnalysis(formData);
   }
 
@@ -437,6 +449,51 @@ export default function FileUpload({ onResult, onError, onWarning, onSampleLoad,
                   💡 For best results, upload files that are related to each other.
                 </p>
               )}
+            </div>
+          )}
+
+          {/* Deep Analysis toggle */}
+          {hasFiles && !loading && (
+            <div style={{ margin: '0.75rem 2rem 0', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              {shouldSuggestDeep(files) && !deep && (
+                <div style={{
+                  background: '#EFF6FF', border: '1px solid #BFDBFE',
+                  borderRadius: '8px', padding: '8px 12px',
+                  fontSize: '12px', color: '#1E40AF', lineHeight: 1.5,
+                }}>
+                  💡 Large document detected — Deep Analysis recommended for better accuracy.
+                </div>
+              )}
+              <div
+                style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                  background: deep ? '#EFF6FF' : 'var(--table-header-bg)',
+                  border: deep ? '1px solid #BFDBFE' : '1px solid var(--card-border)',
+                  borderRadius: '8px', padding: '8px 12px', cursor: 'pointer',
+                }}
+                onClick={() => setDeep(d => !d)}
+              >
+                <div>
+                  <span style={{ fontSize: '13px', fontWeight: 600, color: deep ? '#1D4ED8' : 'var(--text-primary)' }}>
+                    🔍 Deep Analysis
+                  </span>
+                  <span style={{ fontSize: '11px', color: 'var(--text-muted)', marginLeft: '8px' }}>
+                    Full document · richer output · 5 credits
+                  </span>
+                </div>
+                <div style={{
+                  width: '36px', height: '20px', borderRadius: '10px',
+                  background: deep ? '#2563EB' : '#CBD5E1',
+                  position: 'relative', transition: 'background 0.2s', flexShrink: 0,
+                }}>
+                  <div style={{
+                    position: 'absolute', top: '3px',
+                    left: deep ? '19px' : '3px',
+                    width: '14px', height: '14px', borderRadius: '50%',
+                    background: '#fff', transition: 'left 0.2s',
+                  }} />
+                </div>
+              </div>
             </div>
           )}
 
