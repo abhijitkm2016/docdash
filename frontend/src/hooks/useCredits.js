@@ -128,7 +128,7 @@ export function useCredits() {
 
     if (error || !promoCode) return { success: false, message: 'Invalid code' }
 
-    if (new Date(promoCode.expires_at) < new Date()) return {
+    if (promoCode.expires_at && new Date(promoCode.expires_at) < new Date()) return {
       success: false, message: 'This code has expired'
     }
 
@@ -136,12 +136,12 @@ export function useCredits() {
       success: false, message: 'This code has been fully redeemed'
     }
 
-    const { data: existing } = await supabase
+    const { data: existing, error: redemptionCheckError } = await supabase
       .from('promo_redemptions')
       .select('id')
       .eq('user_id', user.id)
       .eq('code_id', promoCode.id)
-      .single()
+      .maybeSingle()
 
     if (existing) return { success: false, message: "You've already used this code" }
 
