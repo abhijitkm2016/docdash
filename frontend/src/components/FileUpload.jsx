@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -76,6 +76,12 @@ export default function FileUpload({ onResult, onError, onWarning, onSampleLoad,
 
   const inputRef   = useRef(null);   // initial upload input
   const addMoreRef = useRef(null);   // "add more files" input
+
+  useEffect(() => {
+    if (shouldSuggestDeep(files) && (selectedMode === 'finance' || selectedMode === 'research')) {
+      setDeep(true);
+    }
+  }, [files, selectedMode]);
 
   // Change 8 — deduplicate by name + size
   function addFiles(incoming) {
@@ -550,7 +556,7 @@ export default function FileUpload({ onResult, onError, onWarning, onSampleLoad,
                   {progress}
                 </>
               ) : (
-                '⚡ Generate Dashboard'
+                `⚡ Generate Dashboard — ${deep ? '5' : '1'} credit${deep ? 's' : ''}`
               )}
             </button>
           )}
