@@ -470,6 +470,15 @@ export default function FileUpload({ onResult, onError, onWarning, onSampleLoad,
                   💡 Large document detected — Deep Analysis recommended for better accuracy.
                 </div>
               )}
+              {shouldSuggestDeep(files) && deep && (selectedMode === 'finance' || selectedMode === 'research') && (
+                <div style={{
+                  background: '#EFF6FF', border: '1px solid #BFDBFE',
+                  borderRadius: '8px', padding: '8px 12px',
+                  fontSize: '12px', color: '#1E40AF', lineHeight: 1.5,
+                }}>
+                  💡 Large file detected. Deep Analysis enabled automatically — standard mode only reads part of the document, which can miss key metrics.
+                </div>
+              )}
               <div
                 style={{
                   display: 'flex', alignItems: 'center', justifyContent: 'space-between',
