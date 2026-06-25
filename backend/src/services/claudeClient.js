@@ -208,117 +208,251 @@ function getModePrompt(mode) {
   switch (mode) {
     case 'finance':
       return `
-ANALYSIS MODE: FINANCIAL
+ANALYSIS MODE: FINANCIAL DOCUMENT
 
-You are analysing a financial document. Apply these priorities:
+You are analysing a financial document — earnings release, P&L, quarterly results, or annual report.
 
-KPIs to extract (pick the most relevant 3–5):
-- Revenue, Gross Margin %, EBITDA, Net Profit, YoY Growth %,
-  Operating Costs, Cash Position, Burn Rate, Cost-to-Income Ratio
+════════════════════════════════
+METRIC HIERARCHY — STRICT ORDER
+════════════════════════════════
 
-Charts to generate:
-- Revenue or key metric trend over time (line chart)
-- Cost or margin breakdown (bar chart)
-- Period-over-period comparison where data allows
+Extract KPIs in this priority order. Stop at 5. Never go deeper than needed:
 
-Narrative focus:
-- Profitability drivers and headwinds
-- Variance analysis vs prior period
-- Cost structure and efficiency
-- Forward-looking risks to margins
+TIER 1 — Always extract if present:
+  1. Total Revenue (or Net Revenue / Net Sales)
+  2. Net Profit (or Profit After Tax / Net Income)
+  3. Operating Profit Margin % (Operating Profit / Revenue)
+  4. YoY Revenue Growth % — current period vs same period prior year
+  5. Gross Margin % (Gross Profit / Revenue)
 
-WatchList focus:
-- Margin compression signals
-- Cost overruns or acceleration
-- Revenue concentration risk
-- Cash or liquidity flags
+TIER 2 — Extract only if Tier 1 is fully covered:
+  - EBITDA or EBIT
+  - EPS (Basic or Diluted)
+  - Cash and Cash Equivalents
+  - Return on Equity (ROE)
+
+NEVER extract as a KPI:
+  - Other Income / Other Expenses (footnote-level — ignore unless >10% of revenue)
+  - Exceptional items or one-time charges (mention in narrative only)
+  - Deferred tax, minority interest, goodwill amortisation
+  - Finance costs / interest expense (mention in narrative only)
+  - Any line item not on the face of the income statement
+
+════════════════════════════════
+DOCUMENT STRUCTURE GUIDANCE
+════════════════════════════════
+
+For IFRS/GAAP earnings releases and quarterly results:
+  - Primary source: Consolidated Statement of Profit & Loss (or Income Statement)
+  - Secondary source: Segment revenue breakdown
+  - Ignore: Notes to accounts, accounting policy disclosures, auditor remarks
+
+For period comparison:
+  - Always compare current period vs same period prior year (YoY)
+  - If quarterly data available: also show QoQ (current quarter vs prior quarter)
+  - State the period explicitly in every KPI label e.g. "Q4 FY2026 Revenue"
+
+════════════════════════════════
+CHARTS — PRIORITY ORDER
+════════════════════════════════
+
+Chart 1 (mandatory): Revenue trend — bar or line chart showing last 4–8 periods if available
+Chart 2 (mandatory): Margin trend — Operating Margin % and/or Net Margin % over same periods
+Chart 3 (conditional): Segment revenue breakdown — horizontal bar chart if segment data exists
+Chart 4 (conditional): Period-over-period comparison — grouped bar for current vs prior period
+
+If only two periods exist (current + prior): grouped bar chart comparing key P&L lines.
+
+════════════════════════════════
+NARRATIVE FOCUS
+════════════════════════════════
+
+  - Lead with revenue and profit performance vs prior period — cite exact % change
+  - Explain margin movement: what drove expansion or compression
+  - Identify the strongest and weakest performing segment if segment data exists
+  - Mention any guidance or outlook language from the document
+  - Call out one-time items that distort the underlying trend
+
+════════════════════════════════
+WATCHLIST FOCUS
+════════════════════════════════
+
+  - Margin compression: operating or net margin declining YoY
+  - Revenue concentration: if top segment >50% of total
+  - Growth deceleration: revenue growth slowing vs prior periods
+  - Cost acceleration: expenses growing faster than revenue
+  - Cash position: declining cash with negative operating cash flow
 `;
 
     case 'hr':
       return `
 ANALYSIS MODE: HR & WORKFORCE
 
-You are analysing an HR or workforce document. Apply these priorities:
+You are analysing an HR, headcount, or people analytics document.
 
-KPIs to extract (pick the most relevant 3–5):
-- Headcount, Attrition Rate %, Cost-per-Hire, Average Tenure,
-  Offer Acceptance Rate, Time-to-Fill, Absenteeism Rate,
-  Internal Promotion Rate, Training Hours per Employee
+════════════════════════════════
+METRIC HIERARCHY — STRICT ORDER
+════════════════════════════════
 
-Charts to generate:
-- Headcount trend over time (line chart)
-- Attrition or hiring by department/team (bar chart)
-- Tenure or diversity distribution where data allows
+TIER 1 — Always extract if present:
+  1. Total Headcount (or FTE count)
+  2. Attrition Rate % (voluntary preferred; total if not split)
+  3. Net Headcount Change (hires minus exits in period)
+  4. Cost-per-Hire (if available)
+  5. Average Tenure (years or months)
 
-Narrative focus:
-- Workforce health and stability
-- Retention risks and attrition drivers
-- Hiring velocity and pipeline health
-- Engagement or productivity signals
+TIER 2 — Extract only if Tier 1 fully covered:
+  - Time-to-Fill (days)
+  - Offer Acceptance Rate %
+  - Internal Promotion Rate %
+  - Absenteeism Rate %
+  - Training Hours per Employee
 
-WatchList focus:
-- High-attrition teams or departments
-- Roles with long time-to-fill
-- Flight risk signals
-- Compensation or benefits gaps
+NEVER extract as KPI:
+  - Raw headcount by individual team unless it is the primary data
+  - Salary bands or individual compensation data
+  - Generic engagement scores without benchmark context
+
+════════════════════════════════
+CHARTS — PRIORITY ORDER
+════════════════════════════════
+
+Chart 1: Headcount trend over time (line or bar)
+Chart 2: Attrition or hiring by department/function (horizontal bar)
+Chart 3: Tenure distribution or diversity breakdown if data exists
+Chart 4: Hire vs exit comparison by period if data allows
+
+════════════════════════════════
+NARRATIVE FOCUS
+════════════════════════════════
+
+  - Workforce health: is headcount growing, stable, or shrinking
+  - Attrition drivers: which functions or levels are losing people
+  - Hiring velocity vs open roles
+  - Flight risk signals: high attrition + long time-to-fill in same team
+
+════════════════════════════════
+WATCHLIST FOCUS
+════════════════════════════════
+
+  - Attrition >15% annualised in any team
+  - Time-to-fill >45 days for critical roles
+  - Headcount declining while revenue growing (positive) or declining (negative signal)
+  - Offer acceptance rate <70%
 `;
 
     case 'sales':
       return `
 ANALYSIS MODE: SALES & REVENUE
 
-You are analysing a sales or revenue document. Apply these priorities:
+You are analysing a sales report, pipeline review, or revenue data file.
 
-KPIs to extract (pick the most relevant 3–5):
-- Total Revenue, Win Rate %, Average Deal Size, Pipeline Coverage,
-  Deal Velocity (days), Churn Rate, NRR %, CAC, LTV, Quota Attainment %
+════════════════════════════════
+METRIC HIERARCHY — STRICT ORDER
+════════════════════════════════
 
-Charts to generate:
-- Revenue trend by period (line chart)
-- Revenue or deals by segment, region, or product (bar chart)
-- Pipeline stage breakdown or win/loss trend where data allows
+TIER 1 — Always extract if present:
+  1. Total Revenue (or Bookings / ARR / MRR)
+  2. Revenue Growth % vs prior period
+  3. Win Rate % (deals won / deals closed)
+  4. Pipeline Coverage Ratio (pipeline value / quota)
+  5. Average Deal Size
 
-Narrative focus:
-- Pipeline health and coverage ratio
-- Top performing segments or reps
-- Churn and expansion signals
-- Deal risk and stall patterns
+TIER 2 — Extract only if Tier 1 fully covered:
+  - Deal Velocity (average days to close)
+  - Churn Rate % or Logo Churn
+  - Net Revenue Retention % (NRR)
+  - Customer Acquisition Cost (CAC)
+  - Quota Attainment %
 
-WatchList focus:
-- Deals at risk or stalled
-- Segments with declining win rate
-- Churn acceleration signals
-- Pipeline gaps vs target
+NEVER extract as KPI:
+  - Raw deal counts without context
+  - Activity metrics (calls made, emails sent) unless no outcome data exists
+  - Pipeline value alone without coverage ratio context
+
+════════════════════════════════
+CHARTS — PRIORITY ORDER
+════════════════════════════════
+
+Chart 1: Revenue trend by period (line or bar)
+Chart 2: Revenue or deals by segment, region, or product (horizontal bar)
+Chart 3: Pipeline stage breakdown (funnel or bar) if stage data exists
+Chart 4: Win/loss trend or quota attainment over periods
+
+════════════════════════════════
+NARRATIVE FOCUS
+════════════════════════════════
+
+  - Pipeline health and whether coverage is sufficient for target
+  - Top performing segments, regions, or reps — cite specific numbers
+  - Churn or expansion signals and NRR trend
+  - Deal risk: stalled deals, long-cycle outliers, segment weakness
+
+════════════════════════════════
+WATCHLIST FOCUS
+════════════════════════════════
+
+  - Pipeline coverage below 3x quota
+  - Win rate declining more than 5pp vs prior period
+  - Churn acceleration in any segment
+  - Average deal size shrinking (possible downmarket drift)
+  - Single segment or customer >30% of revenue (concentration risk)
 `;
 
     case 'research':
       return `
-ANALYSIS MODE: RESEARCH & ANALYSIS
+ANALYSIS MODE: RESEARCH & ANALYSIS DOCUMENT
 
-You are analysing a research report, study, or analytical document.
-Apply these priorities:
+You are analysing a research report, study, literature review, or analytical document.
 
-KPIs to extract (pick the most relevant 3–5):
-- Key Findings Count, Data Sources Count, Sample Size,
-  Time Period Covered, Confidence Level, Coverage Gaps Identified,
-  Recommendations Count
+════════════════════════════════
+METRIC HIERARCHY — STRICT ORDER
+════════════════════════════════
 
-Charts to generate:
-- Theme or topic frequency (bar chart)
-- Source or methodology distribution where data allows
-- Timeline of findings or data points where data allows
+TIER 1 — Always extract if present:
+  1. Primary Finding (the single most important claim with evidence)
+  2. Sample Size or Data Coverage (n=X, X countries, X years)
+  3. Key Themes Count (distinct themes identified)
+  4. Time Period Covered
+  5. Confidence Level or Statistical Significance if reported
 
-Narrative focus:
-- Synthesis of key claims and findings
-- Methodology strength and limitations
-- Areas of consensus vs contradiction
-- Evidence quality and gaps
+TIER 2 — Extract only if Tier 1 fully covered:
+  - Number of Sources Cited
+  - Coverage Gaps Identified
+  - Number of Recommendations
+  - Effect Size or Magnitude of Key Finding
 
-WatchList focus:
-- Unsupported or weakly evidenced claims
-- Data gaps or missing time periods
-- Conflicting findings between sources
-- Recommendations lacking clear evidence base
+NEVER extract as KPI:
+  - Page count or word count
+  - Number of authors
+  - Generic methodology labels without context
+
+════════════════════════════════
+CHARTS — PRIORITY ORDER
+════════════════════════════════
+
+Chart 1: Theme or topic frequency (horizontal bar — most to least cited)
+Chart 2: Finding confidence or evidence quality distribution (bar)
+Chart 3: Timeline of data points or studies if temporal data exists
+Chart 4: Source or methodology distribution if multiple research types
+
+════════════════════════════════
+NARRATIVE FOCUS
+════════════════════════════════
+
+  - The central argument or thesis — state it explicitly
+  - Strongest evidence and where it comes from
+  - Areas of consensus vs contradiction across sources
+  - Methodology strength and key limitations
+
+════════════════════════════════
+WATCHLIST FOCUS
+════════════════════════════════
+
+  - Claims without cited evidence or sample size
+  - Contradictory findings between sources — flag explicitly
+  - Outdated data (>3 years old) used to support current recommendations
+  - Recommendations that overstate what the evidence supports
 `;
 
     default: // 'auto'
