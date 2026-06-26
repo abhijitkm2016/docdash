@@ -414,10 +414,13 @@ function AppInner() {
   // ── Landing auth bar (shared between WelcomeScreen and upload views) ─────────
   const landingBar = (
     <div style={styles.landingAuthBar}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+      <button
+        onClick={() => window.location.href = '/'}
+        style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+      >
         <span style={{ fontSize: '1rem' }}>⚡</span>
         <span style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--accent)' }}>DocDash</span>
-      </div>
+      </button>
       <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
         {user && (
           <button
