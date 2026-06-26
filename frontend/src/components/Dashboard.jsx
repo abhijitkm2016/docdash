@@ -327,7 +327,7 @@ function DashboardInner({
   data, standaloneHtml, sessionId,
   onReset, remixControl, remixLoading, remixVersion,
   readOnly, isAuthenticated, onRequestSignIn,
-  user, onSignOut, onShowHistory, onShowPrivacy, onShare,
+  user, onSignOut, onShowHistory, onShowPrivacy, onShare, truncated,
 }) {
   const [showPrivacy, setShowPrivacy] = useState(false);
   const dimensions       = data.dimensions       || [];
@@ -399,6 +399,29 @@ function DashboardInner({
         )}
         <p style={styles.metaLine}>Generated from source document</p>
       </div>
+
+      {truncated && (
+        <div style={{
+          margin: '0 0 1.5rem',
+          padding: '10px 16px',
+          background: '#FFF7ED',
+          border: '1px solid #FED7AA',
+          borderRadius: '8px',
+          display: 'flex',
+          alignItems: 'flex-start',
+          gap: '10px',
+        }}>
+          <span style={{ fontSize: '16px', flexShrink: 0 }}>⚠️</span>
+          <div>
+            <p style={{ margin: 0, fontSize: '13px', fontWeight: 600, color: '#92400E' }}>
+              Large document — standard analysis only
+            </p>
+            <p style={{ margin: '2px 0 0', fontSize: '12px', color: '#B45309', lineHeight: 1.5 }}>
+              This document exceeded the standard analysis limit and was condensed. Some metrics may be incomplete. Use Deep Analysis (5 credits) for full document coverage.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* ── Executive Summary ─────────────────────────────────── */}
       <Section title="Executive Summary">

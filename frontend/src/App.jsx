@@ -362,6 +362,7 @@ function AppInner() {
           onSignOut={signOut}
           onShowHistory={() => setShowHistory(h => !h)}
           onShare={handleShare}
+          truncated={!!result.truncated}
         />
 
         {/* GuestBanner — bottom persistent nudge for non-signed-in users */}

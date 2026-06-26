@@ -190,7 +190,7 @@ export default function FileUpload({ onResult, onError, onWarning, onSampleLoad,
             if (data.truncated) {
               onWarning?.('Large document condensed for analysis — results reflect the full document\'s structure.');
             }
-            onResult({ ...data, mode: data.mode || selectedMode }, files[0]?.name || 'document');
+            onResult({ ...data, mode: data.mode || selectedMode, truncated: !!data.truncated }, files[0]?.name || 'document');
             return;
           } else if (eventType === 'error') {
             throw new Error(data.message);
