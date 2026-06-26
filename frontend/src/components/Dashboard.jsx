@@ -117,11 +117,8 @@ function ExportButton({ dashboardData, isAuthenticated, onRequestSignIn, onShare
   }, []);
 
   function handleClick() {
-    if (!isAuthenticated) {
-      setShowGate(o => !o);
-    } else {
-      setOpen(o => !o);
-    }
+    setOpen(o => !o);
+    setShowGate(false);
   }
 
   function handleHtml() { exportToHtml(dashboardData); setOpen(false); }
@@ -129,7 +126,7 @@ function ExportButton({ dashboardData, isAuthenticated, onRequestSignIn, onShare
   function handlePpt()  { exportToPpt(dashboardData);  setOpen(false); }
 
   async function handleShare() {
-    if (!isAuthenticated) { setOpen(false); onRequestSignIn?.(); return; }
+    if (!isAuthenticated) { setShowGate(o => !o); return; }
     setOpen(false);
     setCopying(true);
     await onShare?.();
@@ -153,14 +150,7 @@ function ExportButton({ dashboardData, isAuthenticated, onRequestSignIn, onShare
         {copying ? '✓ Link copied' : '⬇ Export'}{' '}
         <span style={{ fontSize: '10px', opacity: 0.6, display: 'inline-block', transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s' }}>▼</span>
       </button>
-      {showGate && (
-        <AuthGate
-          action="export"
-          onSignIn={() => { setShowGate(false); onRequestSignIn?.(); }}
-          onDismiss={() => setShowGate(false)}
-        />
-      )}
-      {isAuthenticated && open && (
+      {open && (
         <div style={exportStyles.dropdown}>
           {exportOptions.map((opt, idx) => (
             <button
@@ -174,15 +164,29 @@ function ExportButton({ dashboardData, isAuthenticated, onRequestSignIn, onShare
               <span style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px', display: 'block' }}>{opt.desc}</span>
             </button>
           ))}
-          <button
-            onClick={handleShare}
-            style={{ ...exportStyles.item, borderBottom: 'none' }}
-            onMouseEnter={e => { e.currentTarget.style.background = 'var(--table-header-bg)'; }}
-            onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}
-          >
-            <span style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-primary)', display: 'block' }}>↗ Share as Link</span>
-            <span style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px', display: 'block' }}>Copy sharable URL</span>
-          </button>
+          <div style={{ position: 'relative' }}>
+            <button
+              onClick={handleShare}
+              style={{ ...exportStyles.item, borderBottom: 'none', width: '100%' }}
+              onMouseEnter={e => { e.currentTarget.style.background = 'var(--table-header-bg)'; }}
+              onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}
+            >
+              <span style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                ↗ Share as Link
+                {!isAuthenticated && <span style={{ fontSize: '11px', opacity: 0.5 }}>🔒</span>}
+              </span>
+              <span style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px', display: 'block' }}>
+                {isAuthenticated ? 'Copy sharable URL' : 'Sign in to share'}
+              </span>
+            </button>
+            {showGate && (
+              <AuthGate
+                action="share"
+                onSignIn={() => { setShowGate(false); setOpen(false); onRequestSignIn?.(); }}
+                onDismiss={() => setShowGate(false)}
+              />
+            )}
+          </div>
         </div>
       )}
     </div>
