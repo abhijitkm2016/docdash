@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import ProfileMenu from './ProfileMenu';
 import { FilterProvider, useFilter } from '../context/FilterContext';
 import AuthGate from './AuthGate';
 import { useTheme } from '../context/ThemeContext';
@@ -263,72 +264,6 @@ function IconButton({ icon, label, onClick }) {
     >
       {icon}
     </button>
-  );
-}
-
-// ── Profile menu ──────────────────────────────────────────────────────────────
-function ProfileMenu({ user, onSignOut, onRequestSignIn }) {
-  const [open, setOpen] = useState(false);
-  const ref = useRef(null);
-
-  useEffect(() => {
-    function handler(e) {
-      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
-    }
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, []);
-
-  if (!user) {
-    return (
-      <button
-        className="no-print"
-        onClick={onRequestSignIn}
-        style={styles.signInBtn}
-      >
-        Sign in
-      </button>
-    );
-  }
-
-  const name = user.user_metadata?.full_name || user.email || '';
-  const initials = name
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map(w => w[0].toUpperCase())
-    .join('') || '?';
-
-  return (
-    <div ref={ref} style={{ position: 'relative' }} className="no-print">
-      <button
-        onClick={() => setOpen(o => !o)}
-        aria-label="Account menu"
-        style={styles.avatarBtn}
-        title={user.email}
-      >
-        {initials}
-      </button>
-      {open && (
-        <div style={styles.profileDropdown}>
-          <div style={styles.profileInfo}>
-            <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '2px' }}>
-              {user.user_metadata?.full_name || ''}
-            </div>
-            <div style={{ fontSize: '11px', color: 'var(--text-muted)', wordBreak: 'break-all' }}>
-              {user.email}
-            </div>
-          </div>
-          <div style={styles.profileDivider} />
-          <button
-            onClick={() => { setOpen(false); onSignOut?.(); }}
-            style={styles.signOutBtn}
-          >
-            Sign out
-          </button>
-        </div>
-      )}
-    </div>
   );
 }
 
