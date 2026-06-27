@@ -19,6 +19,7 @@ import RemixPopover     from './components/RemixPopover';
 import PurchaseHistory  from './components/PurchaseHistory';
 import AdminPanel       from './components/AdminPanel';
 import ProfileMenu      from './components/ProfileMenu';
+import { HomeTour, DashboardTour, TOUR_HOME_KEY, TOUR_DASH_KEY, TOUR_HOME_COUNT_KEY, TOUR_DASH_COUNT_KEY } from './components/ProductTour';
 
 function detectErrorType(msg) {
   if (!msg) return 'generic';
@@ -75,6 +76,38 @@ function AppInner() {
   const [currentMode,       setCurrentMode]       = useState('auto');
   const [toast,             setToast]             = useState(null);
   const [showAdminPanel,    setShowAdminPanel]    = useState(false);
+  const [showHomeTour,      setShowHomeTour]      = useState(false);
+  const [showDashboardTour, setShowDashboardTour] = useState(false);
+
+  // ── Product tour auto-show ────────────────────────────────────────────────
+  useEffect(() => {
+    if (!authLoading) {
+      const done  = localStorage.getItem(TOUR_HOME_KEY);
+      const count = parseInt(localStorage.getItem(TOUR_HOME_COUNT_KEY) || '0');
+      if (!done && count < 2) setShowHomeTour(true);
+    }
+  }, [authLoading]);
+
+  function handleHomeTourComplete(dontShow) {
+    setShowHomeTour(false);
+    const count = parseInt(localStorage.getItem(TOUR_HOME_COUNT_KEY) || '0');
+    localStorage.setItem(TOUR_HOME_COUNT_KEY, String(count + 1));
+    if (dontShow || count + 1 >= 2) {
+      localStorage.setItem(TOUR_HOME_KEY, 'true');
+    }
+  }
+
+  function handleDashboardTourComplete(dontShow) {
+    setShowDashboardTour(false);
+    const count = parseInt(localStorage.getItem(TOUR_DASH_COUNT_KEY) || '0');
+    localStorage.setItem(TOUR_DASH_COUNT_KEY, String(count + 1));
+    if (dontShow || count + 1 >= 2) {
+      localStorage.setItem(TOUR_DASH_KEY, 'true');
+    }
+  }
+
+  function handleShowHomeTour()      { setShowHomeTour(true); }
+  function handleShowDashboardTour() { setShowDashboardTour(true); }
 
   async function handleResult(data, fileName) {
     setResult(data);
@@ -235,6 +268,16 @@ function AppInner() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
+  useEffect(() => {
+    if (result) {
+      const done  = localStorage.getItem(TOUR_DASH_KEY);
+      const count = parseInt(localStorage.getItem(TOUR_DASH_COUNT_KEY) || '0');
+      if (!done && count < 2) {
+        setTimeout(() => setShowDashboardTour(true), 800);
+      }
+    }
+  }, [result]);
+
   // Remix control — always visible; custom tooltip works even when disabled
   const remixControl = (() => {
     const isDisabled = !sessionId || remixLoading;
@@ -363,7 +406,9 @@ function AppInner() {
           onShowHistory={() => setShowHistory(h => !h)}
           onShare={handleShare}
           truncated={!!result.truncated}
+          onShowTour={handleShowDashboardTour}
         />
+        {showDashboardTour && <DashboardTour onComplete={handleDashboardTourComplete} />}
 
         {/* GuestBanner — bottom persistent nudge for non-signed-in users */}
         {!user && <GuestBanner onSignIn={() => setShowAuthModal(true)} />}
@@ -430,6 +475,22 @@ function AppInner() {
             📄 History
           </button>
         )}
+        <button
+          onClick={handleShowHomeTour}
+          title="Take a tour"
+          style={{
+            background: 'transparent',
+            border: '1px solid var(--card-border)',
+            borderRadius: '7px',
+            padding: '5px 10px',
+            fontSize: '13px',
+            color: 'var(--text-secondary)',
+            cursor: 'pointer',
+            fontFamily: 'inherit',
+          }}
+        >
+          ?
+        </button>
         {user ? (
           <>
             {user?.id === '363022d8-cfc1-4e58-ac29-ef9fe6ac287e' && (
@@ -487,6 +548,7 @@ function AppInner() {
           </div>
         )}
         {showAdminPanel && <AdminPanel user={user} onClose={() => setShowAdminPanel(false)} />}
+        {showHomeTour && <HomeTour onComplete={handleHomeTourComplete} />}
       </>
     );
   }
@@ -555,6 +617,7 @@ function AppInner() {
         </div>
       )}
       {showAdminPanel && <AdminPanel user={user} onClose={() => setShowAdminPanel(false)} />}
+      {showHomeTour && <HomeTour onComplete={handleHomeTourComplete} />}
     </>
   );
 }

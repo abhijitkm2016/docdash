@@ -327,7 +327,7 @@ function DashboardInner({
   data, standaloneHtml, sessionId,
   onReset, remixControl, remixLoading, remixVersion,
   readOnly, isAuthenticated, onRequestSignIn,
-  user, onSignOut, onShowHistory, onShowPrivacy, onShare, truncated,
+  user, onSignOut, onShowHistory, onShowPrivacy, onShare, truncated, onShowTour,
 }) {
   const [showPrivacy, setShowPrivacy] = useState(false);
   const dimensions       = data.dimensions       || [];
@@ -367,6 +367,7 @@ function DashboardInner({
           <IconButton icon="📂" label="Document history" onClick={onShowHistory} />
           <ThemeToggle asIcon />
           <IconButton icon="🛡️" label="Data & Privacy" onClick={privacyHandler} />
+          {onShowTour && <IconButton icon="?" label="Take a tour" onClick={onShowTour} />}
 
           <div style={styles.topbarDivider} />
 
