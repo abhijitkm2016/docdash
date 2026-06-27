@@ -34,6 +34,20 @@ function TourOverlay({ steps, onComplete }) {
     unlockScroll();
 
     const el = step?.selector ? document.querySelector(step.selector) : null;
+
+    // If a selector was specified but the element isn't in the DOM (e.g. watch
+    // list not present for this document), skip this step entirely.
+    if (step?.selector && !el) {
+      timerRef.current = setTimeout(() => {
+        setIndex(i => {
+          const next = i + 1;
+          if (next >= steps.length) { unlockScroll(); onComplete(false); return i; }
+          return next;
+        });
+      }, 0);
+      return () => clearTimeout(timerRef.current);
+    }
+
     if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
 
     timerRef.current = setTimeout(() => {
@@ -104,7 +118,7 @@ function TourOverlay({ steps, onComplete }) {
         onClick={() => finish(true)}
         style={{
           position: 'fixed', inset: 0, zIndex: 1999,
-          background: 'rgba(5, 10, 20, 0.80)',
+          background: 'rgba(3, 7, 18, 0.88)',
           opacity: visible ? 1 : 0,
           transition: 'opacity 0.2s ease',
           pointerEvents: visible ? 'auto' : 'none',
@@ -122,8 +136,14 @@ function TourOverlay({ steps, onComplete }) {
           borderRadius: 10,
           zIndex:    2000,
           pointerEvents: 'none',
-          // 9999px shadow = everything outside is darkened; inner stays clear
-          boxShadow: '0 0 0 9999px rgba(5,10,20,0.80), 0 0 0 2px #3B82F6, 0 0 16px 2px rgba(59,130,246,0.35)',
+          // 9999px shadow darkens everything outside; layers add bright ring + glow
+          boxShadow: [
+            '0 0 0 9999px rgba(3,7,18,0.88)',          // dark backdrop cutout
+            '0 0 0 2px rgba(255,255,255,0.18)',         // subtle white inner edge
+            '0 0 0 4px #3B82F6',                       // solid blue ring
+            '0 0 0 6px rgba(59,130,246,0.25)',          // soft blue halo
+            '0 0 28px 6px rgba(96,165,250,0.45)',       // outer blue glow
+          ].join(', '),
           opacity:   visible ? 1 : 0,
           transition: 'opacity 0.2s ease, top 0.25s ease, left 0.25s ease, width 0.25s ease, height 0.25s ease',
         }} />
