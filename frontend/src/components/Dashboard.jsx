@@ -534,7 +534,7 @@ const styles = {
     marginBottom: '1.5rem',
     position: 'sticky',
     top: 0,
-    zIndex: 100,
+    zIndex: 2100,
     background: 'var(--surface, var(--card-bg))',
     borderBottom: '1px solid var(--card-border)',
     padding: '0.625rem 0',

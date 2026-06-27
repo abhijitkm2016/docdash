@@ -4,10 +4,11 @@ export const TOUR_HOME_KEY = 'docdash_tour_home_done';
 export const TOUR_DASH_KEY = 'docdash_tour_dashboard_done';
 
 const TW        = 296;   // tooltip width
-const EDGE_PAD  = 12;    // min gap from any viewport edge
+const EDGE_PAD  = 14;    // min gap from any viewport edge
 const SPOT_PAD  = 10;    // padding inflating the spotlight ring
 const ARROW_H   = 9;     // arrow triangle height
 const GAP       = 4;     // extra gap between arrow tip and spotlight edge
+const MIN_H     = 180;   // minimum usable tooltip height; below this we use the fallback
 
 function lockScroll()   { document.body.style.overflow = 'hidden'; }
 function unlockScroll() { document.body.style.overflow = ''; }
@@ -87,23 +88,45 @@ function TourOverlay({ steps, onComplete }) {
     const spaceBelow = VH - sBottom - GAP - ARROW_H - EDGE_PAD;
     const spaceAbove = sTop          - GAP - ARROW_H - EDGE_PAD;
 
-    if (spaceBelow >= spaceAbove) {
-      // Place below — anchor top, card grows down
-      arrowDir = 'up';
-      posStyle = { top: sBottom + GAP + ARROW_H };
-      maxH     = Math.max(80, spaceBelow);
-    } else {
-      // Place above — anchor bottom, card grows UP away from spotlight
+    if (spaceBelow >= MIN_H || spaceBelow >= spaceAbove) {
+      if (spaceBelow >= MIN_H) {
+        // Enough room below — place below with arrow pointing up
+        arrowDir = 'up';
+        posStyle = { top: sBottom + GAP + ARROW_H };
+        maxH     = spaceBelow;
+      } else if (spaceAbove >= MIN_H) {
+        // Enough room above — place above with arrow pointing down
+        arrowDir = 'down';
+        posStyle = { bottom: VH - sTop + GAP + ARROW_H };
+        maxH     = spaceAbove;
+      } else {
+        // Target fills most of the viewport — dock tooltip at bottom, centered, no arrow
+        arrowDir    = null;
+        posStyle    = { bottom: EDGE_PAD };
+        maxH        = Math.max(MIN_H, spaceBelow, spaceAbove);
+        tooltipLeft = Math.max(EDGE_PAD, Math.min(VW - TW - EDGE_PAD, VW / 2 - TW / 2));
+      }
+    } else if (spaceAbove >= MIN_H) {
       arrowDir = 'down';
       posStyle = { bottom: VH - sTop + GAP + ARROW_H };
-      maxH     = Math.max(80, spaceAbove);
+      maxH     = spaceAbove;
+    } else {
+      // Neither side has MIN_H — dock at bottom centered, no arrow
+      arrowDir    = null;
+      posStyle    = { bottom: EDGE_PAD };
+      maxH        = Math.max(MIN_H, spaceBelow, spaceAbove);
+      tooltipLeft = Math.max(EDGE_PAD, Math.min(VW - TW - EDGE_PAD, VW / 2 - TW / 2));
     }
 
-    // Horizontal: centre on target, clamp so tooltip stays on screen
-    tooltipLeft = Math.max(EDGE_PAD, Math.min(VW - TW - EDGE_PAD, sCX - TW / 2));
+    // Horizontal: centre on target, clamp so tooltip stays on screen (skip when docked)
+    if (arrowDir !== null) {
+      tooltipLeft = Math.max(EDGE_PAD, Math.min(VW - TW - EDGE_PAD, sCX - TW / 2));
+    }
 
     // Arrow x: points at the target centre from inside the tooltip box
-    arrowLeft = Math.max(14, Math.min(TW - 14 - ARROW_H * 2, sCX - tooltipLeft - ARROW_H));
+    if (arrowDir !== null) {
+      arrowLeft = Math.max(14, Math.min(TW - 14 - ARROW_H * 2, sCX - tooltipLeft - ARROW_H));
+    }
   } else {
     // No target selector — centered modal card, no arrow
     posStyle = { top: VH / 2 - 160 };
@@ -113,19 +136,23 @@ function TourOverlay({ steps, onComplete }) {
   // ── Render ────────────────────────────────────────────────────────────────────
   return (
     <>
-      {/* Backdrop */}
+      {/* Click-catcher: transparent full-screen div — captures "click outside" but
+          adds no visual darkening so it never dims the spotlight target.
+          When there is no rect (welcome step) we add a background here instead. */}
       <div
         onClick={() => finish(true)}
         style={{
           position: 'fixed', inset: 0, zIndex: 1999,
-          background: 'rgba(3, 7, 18, 0.88)',
+          background: rect ? 'transparent' : 'rgba(3,7,18,0.85)',
           opacity: visible ? 1 : 0,
           transition: 'opacity 0.2s ease',
           pointerEvents: visible ? 'auto' : 'none',
         }}
       />
 
-      {/* Spotlight cut-out */}
+      {/* Spotlight — the box-shadow IS the dark overlay (everything outside the div
+          is darkened); the div itself has no background so the target shows through
+          at full brightness. Never add a background colour here. */}
       {rect && (
         <div style={{
           position:  'fixed',
@@ -136,9 +163,9 @@ function TourOverlay({ steps, onComplete }) {
           borderRadius: 10,
           zIndex:    2000,
           pointerEvents: 'none',
-          // 9999px shadow darkens everything outside; layers add bright ring + glow
+          background: 'transparent',
           boxShadow: [
-            '0 0 0 9999px rgba(3,7,18,0.88)',          // dark backdrop cutout
+            '0 0 0 9999px rgba(3,7,18,0.82)',          // dims everything OUTSIDE the spotlight
             '0 0 0 2px rgba(255,255,255,0.18)',         // subtle white inner edge
             '0 0 0 4px #3B82F6',                       // solid blue ring
             '0 0 0 6px rgba(59,130,246,0.25)',          // soft blue halo
