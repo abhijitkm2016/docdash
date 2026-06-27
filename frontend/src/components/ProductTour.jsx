@@ -1,194 +1,246 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 export const TOUR_HOME_KEY = 'docdash_tour_home_done';
 export const TOUR_DASH_KEY = 'docdash_tour_dashboard_done';
 
-// ── Spotlight + Tooltip engine ────────────────────────────────────────────────
-function TourOverlay({ steps, onComplete }) {
-  const [index,  setIndex]  = useState(0);
-  const [rect,   setRect]   = useState(null);
-  const [visible, setVisible] = useState(false);
+// ── Constants ─────────────────────────────────────────────────────────────────
+const TW          = 310;   // tooltip width px
+const TH_MAX      = 240;   // conservative max tooltip height for positioning
+const EDGE_PAD    = 14;    // min gap from viewport edge
+const SPOT_PAD    = 10;    // padding around spotlight target
+const ARROW_SIZE  = 9;     // triangle half-height
 
-  const step = steps[index];
+// ── Scroll-lock helpers ───────────────────────────────────────────────────────
+function lockScroll() {
+  document.body.style.overflow = 'hidden';
+}
+function unlockScroll() {
+  document.body.style.overflow = '';
+}
+
+// ── TourOverlay ───────────────────────────────────────────────────────────────
+function TourOverlay({ steps, onComplete }) {
+  const [index,   setIndex]   = useState(0);
+  const [rect,    setRect]    = useState(null);
+  const [visible, setVisible] = useState(false);
+  const [dontShow, setDontShow] = useState(false);
+  const timerRef = useRef(null);
+
+  const step   = steps[index];
   const isLast = index === steps.length - 1;
 
-  const measure = useCallback(() => {
-    if (!step?.selector) { setRect(null); return; }
-    const el = document.querySelector(step.selector);
-    if (el) {
-      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      // slight delay so scroll settles before we measure
-      setTimeout(() => setRect(el.getBoundingClientRect()), 220);
-    } else {
-      setRect(null);
-    }
-  }, [step?.selector]);
+  // Unlock scroll on unmount
+  useEffect(() => () => unlockScroll(), []);
 
+  // Per-step: unlock → scroll → lock → measure → show
   useEffect(() => {
     setVisible(false);
-    measure();
-    const t = setTimeout(() => setVisible(true), 280);
-    return () => clearTimeout(t);
-  }, [index, measure]);
+    setRect(null);
+    clearTimeout(timerRef.current);
 
-  useEffect(() => {
-    window.addEventListener('resize', measure);
-    return () => window.removeEventListener('resize', measure);
-  }, [measure]);
+    unlockScroll();
 
-  function advance() {
-    if (isLast) { onComplete(false); return; }
-    setIndex(i => i + 1);
-  }
-
-  function finish(dontShow) {
-    onComplete(dontShow);
-  }
-
-  const PAD    = 8;
-  const TW     = 300;
-  const TH_EST = 190;
-  const VW     = window.innerWidth;
-  const VH     = window.innerHeight;
-
-  // Tooltip position — prefer below, fall back to above, clamp horizontally
-  let tooltipTop  = 0;
-  let tooltipLeft = 0;
-  let arrowDir    = 'up'; // arrow points up (tooltip is below the target)
-
-  if (rect) {
-    const spaceBelow = VH - rect.bottom;
-    const spaceAbove = rect.top;
-
-    if (spaceBelow >= TH_EST + PAD * 2 || spaceBelow >= spaceAbove) {
-      tooltipTop = rect.bottom + PAD + 6;
-      arrowDir   = 'up';
-    } else {
-      tooltipTop = rect.top - TH_EST - PAD - 6;
-      arrowDir   = 'down';
+    const el = step?.selector ? document.querySelector(step.selector) : null;
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
 
-    // Align tooltip centre to target centre, then clamp
-    tooltipLeft = rect.left + rect.width / 2 - TW / 2;
-    tooltipLeft = Math.max(PAD, Math.min(VW - TW - PAD, tooltipLeft));
-  } else {
-    // No target — center the tooltip
-    tooltipTop  = VH / 2 - TH_EST / 2;
-    tooltipLeft = VW / 2 - TW / 2;
-    arrowDir    = null;
+    // Wait for scroll to settle, then lock and measure
+    timerRef.current = setTimeout(() => {
+      lockScroll();
+      if (el) setRect(el.getBoundingClientRect());
+      setVisible(true);
+    }, el ? 420 : 60);
+
+    return () => clearTimeout(timerRef.current);
+  }, [index]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  function finish(skip = false) {
+    unlockScroll();
+    onComplete(skip ? false : dontShow);
   }
 
-  // Arrow horizontal offset relative to tooltip box
-  const arrowLeft = rect
-    ? Math.min(TW - 24, Math.max(12, rect.left + rect.width / 2 - tooltipLeft - 8))
-    : TW / 2 - 8;
+  // ── Position tooltip fully within current viewport ──────────────────────────
+  const VW = window.innerWidth;
+  const VH = window.innerHeight;
 
+  let top, left, arrowDir, arrowOffset;
+
+  if (rect) {
+    const sTop    = rect.top    - SPOT_PAD;          // spotlight top edge
+    const sBottom = rect.bottom + SPOT_PAD;           // spotlight bottom edge
+    const sCX     = rect.left   + rect.width / 2;     // spotlight centre-x
+
+    const spaceBelow = VH - sBottom - EDGE_PAD;
+    const spaceAbove = sTop           - EDGE_PAD;
+
+    if (spaceBelow >= TH_MAX + ARROW_SIZE) {
+      arrowDir = 'up';
+      top = sBottom + ARROW_SIZE + 2;
+    } else if (spaceAbove >= TH_MAX + ARROW_SIZE) {
+      arrowDir = 'down';
+      top = sTop - TH_MAX - ARROW_SIZE - 2;
+    } else {
+      // Not enough room on either side — pick the larger one and clamp
+      arrowDir = spaceBelow >= spaceAbove ? 'up' : 'down';
+      top = arrowDir === 'up'
+        ? sBottom + ARROW_SIZE + 2
+        : sTop - TH_MAX - ARROW_SIZE - 2;
+    }
+
+    // Hard clamp: tooltip must stay within viewport
+    top  = Math.max(EDGE_PAD, Math.min(VH - TH_MAX - EDGE_PAD, top));
+
+    // Horizontal: centre over target, clamp to viewport
+    left = sCX - TW / 2;
+    left = Math.max(EDGE_PAD, Math.min(VW - TW - EDGE_PAD, left));
+
+    // Arrow x relative to tooltip box — points at spotlight centre
+    arrowOffset = Math.max(16, Math.min(TW - 32, sCX - left - ARROW_SIZE));
+  } else {
+    // No target — centre of viewport
+    top      = VH / 2 - TH_MAX / 2;
+    left     = VW / 2 - TW  / 2;
+    arrowDir = null;
+    arrowOffset = TW / 2 - ARROW_SIZE;
+  }
+
+  // ── Render ──────────────────────────────────────────────────────────────────
   return (
     <>
-      {/* Dark backdrop — click to skip */}
+      {/* Backdrop — click to skip */}
       <div
-        onClick={() => finish(false)}
+        onClick={() => finish(true)}
         style={{
           position: 'fixed', inset: 0, zIndex: 1999,
-          background: 'rgba(10, 15, 30, 0.72)',
-          transition: 'opacity 0.25s',
+          background: 'rgba(8, 12, 24, 0.78)',
           opacity: visible ? 1 : 0,
+          transition: 'opacity 0.22s ease',
         }}
       />
 
-      {/* Spotlight cut-out around target */}
+      {/* Spotlight ring */}
       {rect && (
         <div style={{
           position: 'fixed',
-          top:    rect.top    - PAD,
-          left:   rect.left   - PAD,
-          width:  rect.width  + PAD * 2,
-          height: rect.height + PAD * 2,
-          borderRadius: 10,
+          top:    rect.top    - SPOT_PAD,
+          left:   rect.left   - SPOT_PAD,
+          width:  rect.width  + SPOT_PAD * 2,
+          height: rect.height + SPOT_PAD * 2,
+          borderRadius: 12,
           zIndex: 2000,
           pointerEvents: 'none',
-          boxShadow: '0 0 0 9999px rgba(10, 15, 30, 0.72)',
-          border: '2px solid rgba(99, 160, 255, 0.7)',
-          transition: 'opacity 0.25s, top 0.25s, left 0.25s, width 0.25s, height 0.25s',
+          // The magic: casts a 9999px shadow over everything else
+          boxShadow: '0 0 0 9999px rgba(8, 12, 24, 0.78), 0 0 0 2px #3B82F6, 0 0 18px rgba(59,130,246,0.45)',
           opacity: visible ? 1 : 0,
+          transition: 'opacity 0.22s ease, top 0.28s ease, left 0.28s ease, width 0.28s ease, height 0.28s ease',
         }} />
       )}
 
       {/* Tooltip */}
       <div style={{
         position: 'fixed',
-        top:    tooltipTop,
-        left:   tooltipLeft,
-        width:  TW,
+        top,
+        left,
+        width: TW,
+        maxHeight: VH - EDGE_PAD * 2,
         zIndex: 2001,
         opacity: visible ? 1 : 0,
-        transform: visible ? 'translateY(0)' : 'translateY(6px)',
-        transition: 'opacity 0.25s, transform 0.25s',
+        transform: visible ? 'translateY(0) scale(1)' : 'translateY(8px) scale(0.97)',
+        transition: 'opacity 0.22s ease, transform 0.22s ease',
+        display: 'flex',
+        flexDirection: 'column',
       }}>
-        {/* Arrow */}
+
+        {/* Arrow pointing at spotlight */}
         {arrowDir === 'up' && (
           <div style={{
-            position: 'absolute',
-            top: -7,
-            left: arrowLeft,
+            position: 'absolute', top: -ARROW_SIZE,
+            left: arrowOffset,
             width: 0, height: 0,
-            borderLeft: '8px solid transparent',
-            borderRight: '8px solid transparent',
-            borderBottom: '8px solid #1E293B',
+            borderLeft:   `${ARROW_SIZE}px solid transparent`,
+            borderRight:  `${ARROW_SIZE}px solid transparent`,
+            borderBottom: `${ARROW_SIZE}px solid #0F172A`,
+            filter: 'drop-shadow(0 -1px 0 rgba(255,255,255,0.08))',
           }} />
         )}
         {arrowDir === 'down' && (
           <div style={{
-            position: 'absolute',
-            bottom: -7,
-            left: arrowLeft,
+            position: 'absolute', bottom: -ARROW_SIZE,
+            left: arrowOffset,
             width: 0, height: 0,
-            borderLeft: '8px solid transparent',
-            borderRight: '8px solid transparent',
-            borderTop: '8px solid #1E293B',
+            borderLeft:  `${ARROW_SIZE}px solid transparent`,
+            borderRight: `${ARROW_SIZE}px solid transparent`,
+            borderTop:   `${ARROW_SIZE}px solid #0F172A`,
           }} />
         )}
 
         {/* Card */}
         <div style={{
-          background: '#1E293B',
-          border: '1px solid rgba(255,255,255,0.1)',
-          borderRadius: 12,
-          padding: '16px 18px 14px',
-          boxShadow: '0 12px 40px rgba(0,0,0,0.55)',
+          background: '#0F172A',
+          border: '1px solid rgba(255,255,255,0.12)',
+          borderRadius: 14,
+          padding: '18px 18px 16px',
+          boxShadow: '0 20px 50px rgba(0,0,0,0.6)',
+          overflow: 'hidden',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 0,
         }}>
-          {/* Step counter */}
+
+          {/* Header row: dots left, X right */}
           <div style={{
-            fontSize: 10, fontWeight: 700, letterSpacing: '0.1em',
-            color: '#6B9BF4', textTransform: 'uppercase', marginBottom: 8,
+            display: 'flex', alignItems: 'center',
+            justifyContent: 'space-between',
+            marginBottom: 14,
           }}>
-            {index + 1} / {steps.length}
-            {/* Progress bar */}
-            <span style={{
-              display: 'inline-block',
-              marginLeft: 8,
-              width: 60,
-              height: 3,
-              background: '#334155',
-              borderRadius: 2,
-              verticalAlign: 'middle',
-              position: 'relative',
-              overflow: 'hidden',
-            }}>
-              <span style={{
-                position: 'absolute', inset: 0,
-                width: `${((index + 1) / steps.length) * 100}%`,
-                background: '#6B9BF4',
-                transition: 'width 0.3s ease',
-              }} />
-            </span>
+            {/* Step dots */}
+            <div style={{ display: 'flex', gap: 5, alignItems: 'center' }}>
+              {steps.map((_, i) => (
+                <button
+                  key={i}
+                  onClick={() => setIndex(i)}
+                  style={{
+                    width:  i === index ? 20 : 7,
+                    height: 7,
+                    borderRadius: 4,
+                    background: i === index ? '#3B82F6' : (i < index ? '#334155' : '#1E293B'),
+                    border: i === index ? 'none' : '1px solid #334155',
+                    cursor: 'pointer',
+                    padding: 0,
+                    transition: 'width 0.25s ease, background 0.2s',
+                    flexShrink: 0,
+                  }}
+                />
+              ))}
+            </div>
+
+            {/* Close */}
+            <button
+              onClick={() => finish(true)}
+              style={{
+                background: 'rgba(255,255,255,0.06)',
+                border: '1px solid rgba(255,255,255,0.1)',
+                borderRadius: 6,
+                color: '#64748B',
+                width: 24, height: 24,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: 14, lineHeight: 1,
+                cursor: 'pointer',
+                padding: 0,
+              }}
+              aria-label="Close tour"
+            >
+              ×
+            </button>
           </div>
 
           {/* Title */}
           <p style={{
-            margin: '0 0 6px',
-            fontSize: 14, fontWeight: 700,
+            margin: '0 0 7px',
+            fontSize: 15, fontWeight: 700,
             color: '#F1F5F9', lineHeight: 1.3,
+            letterSpacing: '-0.01em',
           }}>
             {step.title}
           </p>
@@ -196,43 +248,53 @@ function TourOverlay({ steps, onComplete }) {
           {/* Body */}
           <p style={{
             margin: '0 0 14px',
-            fontSize: 12.5, color: '#94A3B8', lineHeight: 1.65,
+            fontSize: 13, color: '#94A3B8', lineHeight: 1.65,
           }}>
             {step.body}
           </p>
 
-          {/* CTA hint if present */}
+          {/* CTA hint */}
           {step.cta && (
-            <p style={{
-              margin: '0 0 12px',
-              fontSize: 11.5,
-              color: '#6B9BF4',
-              fontWeight: 600,
-              display: 'flex', alignItems: 'center', gap: 4,
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: 6,
+              marginBottom: 14,
+              background: 'rgba(59,130,246,0.1)',
+              border: '1px solid rgba(59,130,246,0.2)',
+              borderRadius: 7,
+              padding: '7px 10px',
             }}>
-              <span>👆</span> {step.cta}
-            </p>
+              <span style={{ fontSize: 12 }}>☝️</span>
+              <span style={{ fontSize: 12, color: '#93C5FD', fontWeight: 500 }}>
+                {step.cta}
+              </span>
+            </div>
           )}
 
-          {/* Don't-show checkbox — last step only */}
+          {/* Don't show again — last step only */}
           {isLast && (
             <label style={{
-              display: 'flex', alignItems: 'center', gap: 6,
-              marginBottom: 12, cursor: 'pointer',
+              display: 'flex', alignItems: 'center', gap: 7,
+              marginBottom: 14, cursor: 'pointer', userSelect: 'none',
             }}>
               <input
                 type="checkbox"
-                id="dontShowAgain"
-                style={{ cursor: 'pointer', accentColor: '#6B9BF4' }}
+                checked={dontShow}
+                onChange={e => setDontShow(e.target.checked)}
+                style={{ cursor: 'pointer', accentColor: '#3B82F6', width: 14, height: 14 }}
               />
-              <span style={{ fontSize: 11, color: '#64748B' }}>Don't show this again</span>
+              <span style={{ fontSize: 12, color: '#475569' }}>Don't show this tour again</span>
             </label>
           )}
 
-          {/* Buttons */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          {/* Footer: skip left, back+next right */}
+          <div style={{
+            display: 'flex', alignItems: 'center',
+            justifyContent: 'space-between',
+            paddingTop: 12,
+            borderTop: '1px solid rgba(255,255,255,0.07)',
+          }}>
             <button
-              onClick={() => finish(false)}
+              onClick={() => finish(true)}
               style={{
                 background: 'none', border: 'none',
                 color: '#475569', fontSize: 12,
@@ -240,7 +302,7 @@ function TourOverlay({ steps, onComplete }) {
                 fontFamily: 'inherit',
               }}
             >
-              Skip tour
+              Skip
             </button>
 
             <div style={{ display: 'flex', gap: 6 }}>
@@ -248,10 +310,10 @@ function TourOverlay({ steps, onComplete }) {
                 <button
                   onClick={() => setIndex(i => i - 1)}
                   style={{
-                    background: 'rgba(255,255,255,0.07)',
+                    background: 'rgba(255,255,255,0.06)',
                     border: '1px solid rgba(255,255,255,0.1)',
                     color: '#94A3B8', borderRadius: 8,
-                    padding: '6px 14px', fontSize: 12,
+                    padding: '6px 13px', fontSize: 12,
                     cursor: 'pointer', fontFamily: 'inherit',
                   }}
                 >
@@ -259,23 +321,17 @@ function TourOverlay({ steps, onComplete }) {
                 </button>
               )}
               <button
-                onClick={() => {
-                  if (isLast) {
-                    const cb = document.getElementById('dontShowAgain');
-                    finish(cb?.checked ?? false);
-                  } else {
-                    advance();
-                  }
-                }}
+                onClick={() => isLast ? finish(false) : setIndex(i => i + 1)}
                 style={{
-                  background: '#2563EB', color: '#fff',
-                  border: 'none', borderRadius: 8,
+                  background: 'linear-gradient(135deg, #2563EB, #1D4ED8)',
+                  color: '#fff', border: 'none', borderRadius: 8,
                   padding: '6px 16px', fontSize: 12,
                   fontWeight: 600, cursor: 'pointer',
                   fontFamily: 'inherit',
+                  boxShadow: '0 2px 8px rgba(37,99,235,0.4)',
                 }}
               >
-                {isLast ? 'Finish ✓' : 'Next →'}
+                {isLast ? 'Finish' : 'Next →'}
               </button>
             </div>
           </div>
@@ -285,29 +341,31 @@ function TourOverlay({ steps, onComplete }) {
   );
 }
 
-// ── Home tour steps ───────────────────────────────────────────────────────────
+// ── Home tour steps (upload page, post-login) ─────────────────────────────────
+// Pre-sign-in WelcomeScreen intentionally has no tour —
+// it's a two-CTA marketing screen; a tour there would be noise.
 const HOME_STEPS = [
   {
-    selector: null, // centred welcome card
+    selector: null,
     title: '👋 Welcome to DocDash',
-    body: 'Upload any document and DocDash turns it into a live visual dashboard — KPIs, charts, summaries, and insights — in under a minute.',
+    body: 'Upload any document and get a live visual dashboard — KPIs, charts, insights — in under a minute. This quick tour shows you around.',
   },
   {
     selector: '[data-tour="upload-zone"]',
-    title: '📎 Drop your file here',
-    body: 'Drag & drop or click to browse. DocDash accepts PDFs, Word documents, and plain text up to 10 MB.',
+    title: 'Drop your file here',
+    body: 'Drag & drop or click to browse. DocDash accepts PDF, Word, and plain text files up to 10 MB.',
     cta: 'Click or drag a file to get started',
   },
   {
     selector: '[data-tour="mode-selector"]',
-    title: '🎯 Pick an analysis mode',
-    body: 'Auto works for most documents. Choose Finance, HR, Sales, or Research to tune the AI for your specific domain and get sharper metrics.',
+    title: 'Pick an analysis mode',
+    body: 'Auto works for most documents. Switch to Finance, HR, Sales, or Research to get domain-specific metrics and sharper insights.',
   },
   {
     selector: '[data-tour="sample-doc"]',
-    title: '⚡ Not ready to upload? Try the sample',
-    body: 'Click here to instantly generate a full dashboard from a built-in sample document — no file needed. Perfect for exploring what DocDash can do.',
-    cta: 'Click to see a live example',
+    title: 'Not ready to upload?',
+    body: 'Click here to generate a full dashboard from a built-in sample document — no file needed. Great for exploring DocDash before committing.',
+    cta: 'Click to see a live example now',
   },
 ];
 
@@ -315,36 +373,36 @@ const HOME_STEPS = [
 const DASH_STEPS = [
   {
     selector: '[data-tour="kpi-cards"]',
-    title: '📊 Your key metrics',
-    body: 'DocDash has extracted the most important numbers from your document — with context on trend and what to watch.',
+    title: 'Key metrics',
+    body: 'DocDash extracted the most important numbers from your document — with trend context and what to watch.',
   },
   {
     selector: '[data-tour="charts"]',
-    title: '📈 Visual breakdowns',
-    body: 'Charts built automatically from your data. Use the dimension filters above to slice by time period, segment, or category.',
+    title: 'Visual breakdowns',
+    body: 'Charts built automatically from your data. Use the dimension filters above the charts to slice by time, segment, or category.',
   },
   {
     selector: '[data-tour="ask-data"]',
-    title: '💬 Ask your data anything',
-    body: 'Type any question in plain English. Answers are grounded in the dashboard data — not hallucinated.',
-    cta: 'Try asking "What’s the biggest risk?"',
+    title: 'Ask your data anything',
+    body: 'Type any question in plain English. Answers are grounded in your document — not guessed.',
+    cta: 'Try "What is the biggest risk here?"',
   },
   {
     selector: '[data-tour="watch-list"]',
-    title: '🚨 Executive watch list',
-    body: 'Risks and trends that need your attention, each backed by a specific data point from your document.',
+    title: 'Executive watch list',
+    body: 'Risks and trends that need attention, each backed by a specific data point from your document.',
   },
   {
     selector: '[data-tour="export-btn"]',
-    title: '⬇ Export or share',
-    body: 'Download as PDF, PowerPoint, or interactive HTML. Share a public link — viewers don\'t need to sign in.',
-    cta: 'Click Export to see your options',
+    title: 'Export or share',
+    body: 'Download as PDF, PowerPoint, or HTML. Share a public link — no sign-in required for viewers.',
+    cta: 'Click Export to see all options',
   },
   {
     selector: '[data-tour="remix-btn"]',
-    title: '🔀 Not happy? Remix it',
-    body: 'Generate a fresh take on the same document. Auto Remix picks a new analytical angle; Guided Remix follows your instructions.',
-    cta: 'Click Remix to regenerate the dashboard',
+    title: 'Remix',
+    body: 'Not happy with this view? Remix generates a fresh take on the same document — different angle, same data.',
+    cta: 'Click Remix to try another perspective',
   },
 ];
 
