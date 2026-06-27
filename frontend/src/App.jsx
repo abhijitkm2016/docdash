@@ -445,6 +445,8 @@ function AppInner() {
   }
 
   // ── Landing auth bar (shared between WelcomeScreen and upload views) ─────────
+  const landingBarSpacer = <div style={{ height: 48 }} />;
+
   const landingBar = (
     <div style={styles.landingAuthBar}>
       <button
@@ -508,6 +510,7 @@ function AppInner() {
     return (
       <>
         {landingBar}
+        {landingBarSpacer}
         {historySidebar}
         <WelcomeScreen
           onSignIn={() => setShowAuthModal(true)}
@@ -545,6 +548,7 @@ function AppInner() {
   return (
     <>
       {landingBar}
+      {landingBarSpacer}
       {historySidebar}
 
       {/* Loading overlay — shown while Claude processes */}
@@ -676,6 +680,11 @@ const styles = {
     padding: '0.625rem 1.5rem',
     borderBottom: '1px solid var(--card-border)',
     background: 'var(--card-bg)',
+    position: 'fixed',
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 2100,
   },
   sampleBanner: {
     background: '#EFF6FF',
