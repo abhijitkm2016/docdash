@@ -308,7 +308,7 @@ export default function FileUpload({ onResult, onError, onWarning, onSampleLoad,
           />
 
           {/* Analysis Mode — Segmented Control */}
-          <div style={{ padding: '1.25rem 2rem 0' }}>
+          <div data-tour="mode-selector" style={{ padding: '1.25rem 2rem 0' }}>
             <p style={{
               fontSize: '11px',
               fontWeight: '700',
@@ -369,6 +369,7 @@ export default function FileUpload({ onResult, onError, onWarning, onSampleLoad,
 
           {/* Change 1 — Drop zone (no longer triggers generation) */}
           <div
+            data-tour="upload-zone"
             className="fd-dropzone"
             role="button"
             tabIndex={0}
@@ -394,7 +395,7 @@ export default function FileUpload({ onResult, onError, onWarning, onSampleLoad,
 
           {/* Sample document link */}
           {!hasFiles && !loading && (
-            <button onClick={handleSampleClick} style={styles.sampleLink}>
+            <button data-tour="sample-doc" onClick={handleSampleClick} style={styles.sampleLink}>
               or try a sample document →
             </button>
           )}
@@ -480,6 +481,7 @@ export default function FileUpload({ onResult, onError, onWarning, onSampleLoad,
                 </div>
               )}
               <div
+                data-tour="deep-analysis"
                 style={{
                   display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                   background: deep ? '#EFF6FF' : 'var(--table-header-bg)',

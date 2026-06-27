@@ -19,7 +19,7 @@ import RemixPopover     from './components/RemixPopover';
 import PurchaseHistory  from './components/PurchaseHistory';
 import AdminPanel       from './components/AdminPanel';
 import ProfileMenu      from './components/ProfileMenu';
-import { HomeTour, DashboardTour, TOUR_HOME_KEY, TOUR_DASH_KEY, TOUR_HOME_COUNT_KEY, TOUR_DASH_COUNT_KEY } from './components/ProductTour';
+import { HomeTour, DashboardTour, TOUR_HOME_KEY, TOUR_DASH_KEY } from './components/ProductTour';
 
 function detectErrorType(msg) {
   if (!msg) return 'generic';
@@ -82,28 +82,18 @@ function AppInner() {
   // ── Product tour auto-show ────────────────────────────────────────────────
   useEffect(() => {
     if (!authLoading) {
-      const done  = localStorage.getItem(TOUR_HOME_KEY);
-      const count = parseInt(localStorage.getItem(TOUR_HOME_COUNT_KEY) || '0');
-      if (!done && count < 2) setShowHomeTour(true);
+      if (!localStorage.getItem(TOUR_HOME_KEY)) setShowHomeTour(true);
     }
   }, [authLoading]);
 
   function handleHomeTourComplete(dontShow) {
     setShowHomeTour(false);
-    const count = parseInt(localStorage.getItem(TOUR_HOME_COUNT_KEY) || '0');
-    localStorage.setItem(TOUR_HOME_COUNT_KEY, String(count + 1));
-    if (dontShow || count + 1 >= 2) {
-      localStorage.setItem(TOUR_HOME_KEY, 'true');
-    }
+    if (dontShow) localStorage.setItem(TOUR_HOME_KEY, 'true');
   }
 
   function handleDashboardTourComplete(dontShow) {
     setShowDashboardTour(false);
-    const count = parseInt(localStorage.getItem(TOUR_DASH_COUNT_KEY) || '0');
-    localStorage.setItem(TOUR_DASH_COUNT_KEY, String(count + 1));
-    if (dontShow || count + 1 >= 2) {
-      localStorage.setItem(TOUR_DASH_KEY, 'true');
-    }
+    if (dontShow) localStorage.setItem(TOUR_DASH_KEY, 'true');
   }
 
   function handleShowHomeTour()      { setShowHomeTour(true); }
@@ -270,9 +260,7 @@ function AppInner() {
 
   useEffect(() => {
     if (result) {
-      const done  = localStorage.getItem(TOUR_DASH_KEY);
-      const count = parseInt(localStorage.getItem(TOUR_DASH_COUNT_KEY) || '0');
-      if (!done && count < 2) {
+      if (!localStorage.getItem(TOUR_DASH_KEY)) {
         setTimeout(() => setShowDashboardTour(true), 800);
       }
     }

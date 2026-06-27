@@ -373,14 +373,18 @@ function DashboardInner({
 
           {/* Primary actions */}
           {!readOnly && (
-            <ExportButton
-              dashboardData={data}
-              isAuthenticated={isAuthenticated}
-              onRequestSignIn={onRequestSignIn}
-              onShare={onShare}
-            />
+            <div data-tour="export-btn" style={{ display: 'inline-block' }}>
+              <ExportButton
+                dashboardData={data}
+                isAuthenticated={isAuthenticated}
+                onRequestSignIn={onRequestSignIn}
+                onShare={onShare}
+              />
+            </div>
           )}
-          {!readOnly && remixControl}
+          <div data-tour="remix-btn" style={{ display: 'inline-block' }}>
+            {!readOnly && remixControl}
+          </div>
           {!readOnly && (
             <button onClick={onReset} style={styles.primaryBtn}>↑ New File</button>
           )}
@@ -438,7 +442,7 @@ function DashboardInner({
 
       {/* ── KPI Strip ─────────────────────────────────────────── */}
       <Section title="Key Metrics">
-        <div style={styles.kpiGrid}>
+        <div data-tour="kpi-cards" style={styles.kpiGrid}>
           {(data.kpis || []).slice(0, 5).map((kpi, i) => (
             <KpiCard key={i} {...kpi} />
           ))}
@@ -451,7 +455,7 @@ function DashboardInner({
           <DimensionFilters dimensions={dimensions} />
         )}
         <ActiveFilterBar dimensions={dimensions} />
-        <div style={styles.chartsGrid}>
+        <div data-tour="charts" style={styles.chartsGrid}>
           {(data.charts || []).map(chart => (
             <ChartPanel
               key={chart.id}
@@ -465,7 +469,9 @@ function DashboardInner({
 
       {/* ── Ask Your Data ─────────────────────────────────────── */}
       <Section title="Ask Your Data">
-        <AskYourData sessionId={sessionId} dashboardData={data} />
+        <div data-tour="ask-data">
+          <AskYourData sessionId={sessionId} dashboardData={data} />
+        </div>
       </Section>
 
       {/* ── Analysis ──────────────────────────────────────────── */}
@@ -478,7 +484,9 @@ function DashboardInner({
       {/* ── Watch List ────────────────────────────────────────── */}
       {data.watchList && (
         <Section title="Executive Watch List">
-          <WatchList watchList={data.watchList} />
+          <div data-tour="watch-list">
+            <WatchList watchList={data.watchList} />
+          </div>
         </Section>
       )}
 
