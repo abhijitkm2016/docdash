@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
+import { motion } from 'framer-motion'
 import { useShares } from '../hooks/useShares'
 import Dashboard from './Dashboard'
+import DashboardSkeleton from './Skeleton'
 
 export default function SharedView({ shareToken }) {
   const { getSharedDocument } = useShares()
@@ -19,8 +21,15 @@ export default function SharedView({ shareToken }) {
   }, [shareToken])
 
   if (loading) return (
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', color: '#64748B', fontSize: '14px' }}>
-      Loading shared dashboard...
+    <div>
+      <div style={{
+        background: '#F0FDF4', borderBottom: '1px solid #BBF7D0',
+        padding: '8px 24px', textAlign: 'center',
+        fontSize: '12px', color: '#166534',
+      }}>
+        Loading shared dashboard...
+      </div>
+      <DashboardSkeleton />
     </div>
   )
 
@@ -34,7 +43,12 @@ export default function SharedView({ shareToken }) {
   )
 
   return (
-    <div style={{ paddingBottom: '60px' }}>
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.4, ease: 'easeOut' }}
+      style={{ paddingBottom: '60px' }}
+    >
       <div style={{
         background: '#F0FDF4', borderBottom: '1px solid #BBF7D0',
         padding: '8px 24px', textAlign: 'center',
@@ -75,6 +89,6 @@ export default function SharedView({ shareToken }) {
           Try it free →
         </a>
       </div>
-    </div>
+    </motion.div>
   )
 }

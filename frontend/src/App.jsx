@@ -22,7 +22,7 @@ import ProfileMenu      from './components/ProfileMenu';
 import { HomeTour, DashboardTour, TOUR_HOME_KEY, TOUR_DASH_KEY } from './components/ProductTour';
 import Tooltip from './components/Tooltip';
 import Toast from './components/Toast';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import DashboardSkeleton from './components/Skeleton';
 
 function detectErrorType(msg) {
@@ -389,12 +389,14 @@ function AppInner() {
 
   if (result) {
     return (
-      <motion.div
-        key={animKey}
-        initial={{ opacity: 0, y: 24 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4, ease: 'easeOut' }}
-      >
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={`dashboard-${animKey}`}
+          initial={{ opacity: 0, y: 24 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -16 }}
+          transition={{ duration: 0.35, ease: 'easeOut' }}
+        >
         {isSample && (
           <div style={styles.sampleBanner}>
             Viewing sample document — upload your own file to analyse it
@@ -479,7 +481,8 @@ function AppInner() {
             onDismiss={() => setToast(null)}
           />
         )}
-      </motion.div>
+        </motion.div>
+      </AnimatePresence>
     );
   }
 
@@ -602,10 +605,18 @@ function AppInner() {
 
   // ── Upload / loading / error view ─────────────────────────────────────────────
   return (
-    <>
-      {landingBar}
-      {landingBarSpacer}
-      {historySidebar}
+    <AnimatePresence mode="wait">
+      <motion.div
+        key="upload-view"
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -16 }}
+        transition={{ duration: 0.3, ease: 'easeOut' }}
+      >
+      <>
+        {landingBar}
+        {landingBarSpacer}
+        {historySidebar}
 
       {/* Loading overlay — shown while Claude processes */}
       {isLoading && (
@@ -690,7 +701,9 @@ function AppInner() {
       )}
       {showAdminPanel && <AdminPanel user={user} onClose={() => setShowAdminPanel(false)} />}
       {showHomeTour && <HomeTour onComplete={handleHomeTourComplete} />}
-    </>
+      </>
+      </motion.div>
+    </AnimatePresence>
   );
 }
 
