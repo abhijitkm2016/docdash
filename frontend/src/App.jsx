@@ -58,7 +58,7 @@ function AppInner() {
   }
 
   const { user, signOut, loading: authLoading } = useAuth();
-  const { saveDocument, loadDocument, updateDocument } = useDocuments();
+  const { saveDocument, loadDocument, updateDocument, refetch } = useDocuments();
   const { credits, deductCredit, restoreCredit } = useCredits();
   const { createShare } = useShares();
 
@@ -119,6 +119,10 @@ function AppInner() {
     } else {
       document.title = 'DocDash — Turn any document into an executive dashboard';
     }
+  }, [result]);
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'instant' });
   }, [result]);
 
   function handleHomeTourComplete(dontShow) {
@@ -271,6 +275,7 @@ function AppInner() {
         dashboardData: { ...prev.dashboardData, title: newTitle },
       }));
       document.title = `${newTitle} — DocDash`;
+      refetch();
     }
   }
 

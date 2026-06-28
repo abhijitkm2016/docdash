@@ -66,6 +66,7 @@ export function useDocuments() {
       .eq('user_id', user.id);
 
     if (error) { console.error('updateDocument error:', error); return false; }
+    console.log('updateDocument success — title updated to:', title);
     return true;
   };
 
