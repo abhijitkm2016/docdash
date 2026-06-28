@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client';
 import App from './App.jsx';
 import { AuthProvider } from './contexts/AuthContext.jsx';
 import './index.css';
+import { Analytics } from '@vercel/analytics/react';
 
 class ErrorBoundary extends React.Component {
   constructor(props) {
@@ -84,5 +85,6 @@ ReactDOM.createRoot(document.getElementById('root')).render(
         <App />
       </AuthProvider>
     </ErrorBoundary>
+    <Analytics />
   </React.StrictMode>
 );
