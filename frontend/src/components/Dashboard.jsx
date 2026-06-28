@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import ProfileMenu from './ProfileMenu';
+import Tooltip from './Tooltip';
 import { FilterProvider, useFilter } from '../context/FilterContext';
 import AuthGate from './AuthGate';
 import { useTheme } from '../context/ThemeContext';
@@ -253,21 +254,22 @@ function ThemeToggle({ asIcon = false }) {
 function IconButton({ icon, label, onClick }) {
   const [hovered, setHovered] = useState(false);
   return (
-    <button
-      className="no-print"
-      onClick={onClick}
-      aria-label={label}
-      data-tooltip={label}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-      style={{
-        ...styles.iconBtn,
-        borderColor: hovered ? 'var(--accent)' : 'var(--card-border)',
-        color: hovered ? 'var(--accent)' : 'var(--text-secondary)',
-      }}
-    >
-      {icon}
-    </button>
+    <Tooltip text={label}>
+      <button
+        className="no-print"
+        onClick={onClick}
+        aria-label={label}
+        onMouseEnter={() => setHovered(true)}
+        onMouseLeave={() => setHovered(false)}
+        style={{
+          ...styles.iconBtn,
+          borderColor: hovered ? 'var(--accent)' : 'var(--card-border)',
+          color: hovered ? 'var(--accent)' : 'var(--text-secondary)',
+        }}
+      >
+        {icon}
+      </button>
+    </Tooltip>
   );
 }
 
@@ -373,20 +375,26 @@ function DashboardInner({
 
           {/* Primary actions */}
           {!readOnly && (
-            <div data-tour="export-btn" data-tooltip="Export or share this dashboard" style={{ display: 'inline-block' }}>
-              <ExportButton
-                dashboardData={data}
-                isAuthenticated={isAuthenticated}
-                onRequestSignIn={onRequestSignIn}
-                onShare={onShare}
-              />
-            </div>
+            <Tooltip text="Export or share this dashboard">
+              <div data-tour="export-btn" style={{ display: 'inline-block' }}>
+                <ExportButton
+                  dashboardData={data}
+                  isAuthenticated={isAuthenticated}
+                  onRequestSignIn={onRequestSignIn}
+                  onShare={onShare}
+                />
+              </div>
+            </Tooltip>
           )}
-          <div data-tour="remix-btn" data-tooltip="Generate a new perspective" style={{ display: 'inline-block' }}>
-            {!readOnly && remixControl}
-          </div>
+          <Tooltip text="Generate a new perspective on this document">
+            <div data-tour="remix-btn" style={{ display: 'inline-block' }}>
+              {!readOnly && remixControl}
+            </div>
+          </Tooltip>
           {!readOnly && (
-            <button onClick={onReset} data-tooltip="Start a new analysis" style={styles.primaryBtn}>↑ New File</button>
+            <Tooltip text="Start a new analysis">
+              <button onClick={onReset} style={styles.primaryBtn}>↑ New File</button>
+            </Tooltip>
           )}
 
           <div style={styles.topbarDivider} />

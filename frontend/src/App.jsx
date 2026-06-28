@@ -20,6 +20,7 @@ import PurchaseHistory  from './components/PurchaseHistory';
 import AdminPanel       from './components/AdminPanel';
 import ProfileMenu      from './components/ProfileMenu';
 import { HomeTour, DashboardTour, TOUR_HOME_KEY, TOUR_DASH_KEY } from './components/ProductTour';
+import Tooltip from './components/Tooltip';
 
 function detectErrorType(msg) {
   if (!msg) return 'generic';
@@ -466,48 +467,54 @@ function AppInner() {
       </button>
       <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
         {user && (
-          <button
-            onClick={() => setShowHistory(h => !h)}
-            style={{ fontSize: '12px', color: '#64748B', background: 'transparent', border: '1px solid #E2E8F0', borderRadius: '7px', padding: '5px 12px', cursor: 'pointer', fontFamily: 'inherit' }}
-          >
-            📄 History
-          </button>
+          <Tooltip text="View your document history">
+            <button
+              onClick={() => setShowHistory(h => !h)}
+              style={{ fontSize: '12px', color: '#64748B', background: 'transparent', border: '1px solid #E2E8F0', borderRadius: '7px', padding: '5px 12px', cursor: 'pointer', fontFamily: 'inherit' }}
+            >
+              📄 History
+            </button>
+          </Tooltip>
         )}
-        <button
-          onClick={handleShowHomeTour}
-          title="Take a tour"
-          style={{
-            background: 'transparent',
-            border: '1px solid var(--card-border)',
-            borderRadius: '7px',
-            padding: '5px 10px',
-            fontSize: '13px',
-            color: 'var(--text-secondary)',
-            cursor: 'pointer',
-            fontFamily: 'inherit',
-          }}
-        >
-          ?
-        </button>
+        <Tooltip text="Take a tour">
+          <button
+            onClick={handleShowHomeTour}
+            style={{
+              background: 'transparent',
+              border: '1px solid var(--card-border)',
+              borderRadius: '7px',
+              padding: '5px 10px',
+              fontSize: '13px',
+              color: 'var(--text-secondary)',
+              cursor: 'pointer',
+              fontFamily: 'inherit',
+            }}
+          >
+            ?
+          </button>
+        </Tooltip>
         {user ? (
           <>
             {user?.id === '363022d8-cfc1-4e58-ac29-ef9fe6ac287e' && (
               <button onClick={() => setShowAdminPanel(true)} style={{ fontSize: '12px', color: '#64748B', background: 'transparent', border: '1px solid #E2E8F0', borderRadius: '7px', padding: '5px 12px', cursor: 'pointer', fontFamily: 'inherit' }}>⚙️ Admin</button>
             )}
-            <button
-              onClick={() => setShowPricingModal(true)}
-              style={creditChipStyle}
-              title="Buy more credits"
-            >
-              <span>⚡</span>
-              <span>{credits?.credits_remaining ?? '—'} Credits</span>
-            </button>
+            <Tooltip text="Buy more credits">
+              <button
+                onClick={() => setShowPricingModal(true)}
+                style={creditChipStyle}
+              >
+                <span>⚡</span>
+                <span>{credits?.credits_remaining ?? '—'} Credits</span>
+              </button>
+            </Tooltip>
             <ProfileMenu user={user} onSignOut={signOut} onRequestSignIn={() => setShowAuthModal(true)} />
           </>
         ) : (
-          <button onClick={() => setShowAuthModal(true)} style={navBtnStyle}>
-            Sign in
-          </button>
+          <Tooltip text="Sign in or create a free account">
+            <button onClick={() => setShowAuthModal(true)} style={navBtnStyle}>
+              Sign in
+            </button>
+          </Tooltip>
         )}
       </div>
     </div>

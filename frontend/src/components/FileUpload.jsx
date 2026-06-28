@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
+import Tooltip from './Tooltip';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 const ACCEPTED       = '.pdf,.xlsx,.xls,.csv,.docx,.doc,.pptx,.ppt';
@@ -482,7 +483,6 @@ export default function FileUpload({ onResult, onError, onWarning, onSampleLoad,
               )}
               <div
                 data-tour="deep-analysis"
-                data-tooltip={deep ? "Click to disable Deep Analysis" : "Click to enable Deep Analysis"}
                 style={{
                   display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                   background: deep ? '#EFF6FF' : 'var(--table-header-bg)',
@@ -552,11 +552,11 @@ export default function FileUpload({ onResult, onError, onWarning, onSampleLoad,
 
           {/* Change 5 — Generate Dashboard button */}
           {hasFiles && (
+            <Tooltip text={deep ? 'Full document analysis — 5 credits' : 'Standard analysis — 1 credit'}>
             <button
               className="fd-genbtn"
               onClick={handleGenerate}
               disabled={loading}
-              data-tooltip={deep ? "Reads the full document — 5 credits" : "Standard analysis — 1 credit"}
               style={{
                 ...styles.generateBtn,
                 opacity: loading ? 0.75 : 1,
@@ -572,6 +572,7 @@ export default function FileUpload({ onResult, onError, onWarning, onSampleLoad,
                 `⚡ Generate Dashboard — ${deep ? '5' : '1'} credit${deep ? 's' : ''}`
               )}
             </button>
+            </Tooltip>
           )}
 
           {/* Change 3 — Footer */}
