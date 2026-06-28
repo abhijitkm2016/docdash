@@ -20,6 +20,7 @@ import PurchaseHistory  from './components/PurchaseHistory';
 import AdminPanel       from './components/AdminPanel';
 import ProfileMenu      from './components/ProfileMenu';
 import { HomeTour, DashboardTour, TOUR_HOME_KEY, TOUR_DASH_KEY } from './components/ProductTour';
+import confetti from 'canvas-confetti';
 import Tooltip from './components/Tooltip';
 import Toast from './components/Toast';
 import CommandPalette from './components/CommandPalette';
@@ -28,6 +29,8 @@ import { exportToPdf }  from './utils/exportPdf';
 import { exportToPpt }  from './utils/exportPpt';
 import { motion, AnimatePresence } from 'framer-motion';
 import DashboardSkeleton from './components/Skeleton';
+
+const FIRST_GEN_KEY = 'docdash_first_gen_done';
 
 function detectErrorType(msg) {
   if (!msg) return 'generic';
@@ -157,6 +160,19 @@ function AppInner() {
     setAnimKey(k => k + 1);
     setError(null);
     setCurrentMode(data.mode || 'auto');
+
+    // Confetti on first ever generation
+    if (!localStorage.getItem(FIRST_GEN_KEY)) {
+      localStorage.setItem(FIRST_GEN_KEY, 'true');
+      setTimeout(() => {
+        confetti({
+          particleCount: 120,
+          spread: 80,
+          origin: { y: 0.6 },
+          colors: ['#2563EB', '#60A5FA', '#BFDBFE', '#1D4ED8', '#ffffff'],
+        });
+      }, 600);
+    }
 
     // Auto-save if signed in
     if (user && data.dashboardData) {

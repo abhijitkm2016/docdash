@@ -12,10 +12,44 @@ export default function DocumentHistory({ onLoadDocument, currentDocumentId }) {
   )
 
   if (documents.length === 0) return (
-    <div style={{ padding: '20px' }}>
-      <p style={{ fontSize: '13px', color: '#94A3B8', margin: 0 }}>
-        No documents yet. Upload your first document to get started.
+    <div style={{
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: '48px 24px',
+      textAlign: 'center',
+      gap: '12px',
+    }}>
+      <div style={{ fontSize: '40px', marginBottom: '4px' }}>⚡</div>
+      <p style={{
+        fontSize: '14px',
+        fontWeight: 600,
+        color: 'var(--text-primary)',
+        margin: 0,
+      }}>
+        Your first dashboard is one upload away
       </p>
+      <p style={{
+        fontSize: '12px',
+        color: 'var(--text-muted)',
+        lineHeight: 1.6,
+        margin: 0,
+        maxWidth: '200px',
+      }}>
+        Upload any PDF, Excel, or CSV and DocDash will turn it into an executive dashboard instantly.
+      </p>
+      <div style={{
+        marginTop: '8px',
+        fontSize: '11px',
+        color: 'var(--text-muted)',
+        background: 'var(--table-header-bg)',
+        border: '1px solid var(--card-border)',
+        borderRadius: '20px',
+        padding: '4px 12px',
+      }}>
+        5 free credits on signup
+      </div>
     </div>
   )
 
