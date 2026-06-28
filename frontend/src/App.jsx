@@ -22,6 +22,10 @@ import ProfileMenu      from './components/ProfileMenu';
 import { HomeTour, DashboardTour, TOUR_HOME_KEY, TOUR_DASH_KEY } from './components/ProductTour';
 import Tooltip from './components/Tooltip';
 import Toast from './components/Toast';
+import CommandPalette from './components/CommandPalette';
+import { exportToHtml } from './utils/exportHtml';
+import { exportToPdf }  from './utils/exportPdf';
+import { exportToPpt }  from './utils/exportPpt';
 import { motion, AnimatePresence } from 'framer-motion';
 import DashboardSkeleton from './components/Skeleton';
 
@@ -79,9 +83,21 @@ function AppInner() {
   const [currentMode,       setCurrentMode]       = useState('auto');
   const [toast,             setToast]             = useState(null);
   // toast shape: { message, variant, position, dismissible, autoDismiss }
-  const [showAdminPanel,    setShowAdminPanel]    = useState(false);
-  const [showHomeTour,      setShowHomeTour]      = useState(false);
-  const [showDashboardTour, setShowDashboardTour] = useState(false);
+  const [showAdminPanel,      setShowAdminPanel]      = useState(false);
+  const [showHomeTour,        setShowHomeTour]        = useState(false);
+  const [showDashboardTour,   setShowDashboardTour]   = useState(false);
+  const [showCommandPalette,  setShowCommandPalette]  = useState(false);
+
+  useEffect(() => {
+    function handleKeyDown(e) {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        setShowCommandPalette(p => !p);
+      }
+    }
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   function showToast(message, variant = 'success', options = {}) {
     setToast({ message, variant, ...options });
@@ -329,6 +345,104 @@ function AppInner() {
     );
   })();
 
+  // ── Command palette commands — context-aware ─────────────────────────────────
+  const commands = [
+    {
+      id: 'new-file',
+      icon: '📄',
+      label: 'New File',
+      description: 'Start a new document analysis',
+      shortcut: '',
+      keywords: ['upload', 'new', 'start', 'reset'],
+      action: handleReset,
+    },
+    {
+      id: 'toggle-history',
+      icon: '📂',
+      label: 'Open History',
+      description: 'View your previously generated dashboards',
+      keywords: ['history', 'documents', 'previous', 'saved'],
+      action: () => setShowHistory(h => !h),
+    },
+    {
+      id: 'buy-credits',
+      icon: '⚡',
+      label: 'Buy Credits',
+      description: 'Purchase more analysis credits',
+      keywords: ['credits', 'pay', 'purchase', 'pricing'],
+      action: () => setShowPricingModal(true),
+    },
+    {
+      id: 'take-tour',
+      icon: '?',
+      label: 'Take a Tour',
+      description: 'See a guided walkthrough of DocDash',
+      keywords: ['tour', 'help', 'guide', 'walkthrough'],
+      action: () => result ? handleShowDashboardTour() : handleShowHomeTour(),
+    },
+    ...(result ? [
+      {
+        id: 'export-html',
+        icon: '🌐',
+        label: 'Export as HTML',
+        description: 'Download interactive web dashboard',
+        keywords: ['export', 'html', 'download', 'web'],
+        action: () => exportToHtml(result.dashboardData),
+      },
+      {
+        id: 'export-pdf',
+        icon: '📄',
+        label: 'Export as PDF',
+        description: 'Download structured analyst report',
+        keywords: ['export', 'pdf', 'download', 'report'],
+        action: () => exportToPdf(result.dashboardData),
+      },
+      {
+        id: 'export-ppt',
+        icon: '📊',
+        label: 'Export as PowerPoint',
+        description: 'Download 5-slide presentation deck',
+        keywords: ['export', 'ppt', 'powerpoint', 'slides', 'presentation'],
+        action: () => exportToPpt(result.dashboardData),
+      },
+      {
+        id: 'share',
+        icon: '🔗',
+        label: 'Share as Link',
+        description: 'Copy a public shareable URL',
+        keywords: ['share', 'link', 'copy', 'public'],
+        action: handleShare,
+      },
+      {
+        id: 'remix',
+        icon: '🔀',
+        label: 'Auto Remix',
+        description: 'Generate a new perspective on this document',
+        keywords: ['remix', 'regenerate', 'new perspective'],
+        action: handleAutoRemix,
+      },
+    ] : []),
+    ...(user ? [
+      {
+        id: 'sign-out',
+        icon: '👋',
+        label: 'Sign Out',
+        description: `Signed in as ${user.email}`,
+        keywords: ['sign out', 'logout', 'exit'],
+        action: signOut,
+      },
+    ] : [
+      {
+        id: 'sign-in',
+        icon: '👤',
+        label: 'Sign In',
+        description: 'Sign in to save and share dashboards',
+        keywords: ['sign in', 'login', 'account'],
+        action: () => setShowAuthModal(true),
+      },
+    ]),
+  ];
+
   // ── History sidebar — position:fixed, renders over any view ─────────────────
   const historySidebar = showHistory && (
     <div style={styles.sidebar}>
@@ -421,8 +535,14 @@ function AppInner() {
           onShare={handleShare}
           truncated={!!result.truncated}
           onShowTour={handleShowDashboardTour}
+          onOpenCommandPalette={() => setShowCommandPalette(true)}
         />
         {showDashboardTour && <DashboardTour onComplete={handleDashboardTourComplete} />}
+        <CommandPalette
+          isOpen={showCommandPalette}
+          onClose={() => setShowCommandPalette(false)}
+          commands={commands}
+        />
 
         {/* GuestBanner — bottom persistent nudge for non-signed-in users */}
         {!user && <GuestBanner onSignIn={() => setShowAuthModal(true)} />}
@@ -526,6 +646,24 @@ function AppInner() {
             ?
           </button>
         </Tooltip>
+        <Tooltip text="Command palette">
+          <button
+            onClick={() => setShowCommandPalette(true)}
+            style={{
+              background: 'transparent',
+              border: '1px solid var(--card-border)',
+              borderRadius: '7px',
+              padding: '5px 10px',
+              fontSize: '12px',
+              color: 'var(--text-secondary)',
+              cursor: 'pointer',
+              fontFamily: 'inherit',
+              letterSpacing: '0.03em',
+            }}
+          >
+            ⌘K
+          </button>
+        </Tooltip>
         {user ? (
           <>
             {user?.id === '363022d8-cfc1-4e58-ac29-ef9fe6ac287e' && (
@@ -599,6 +737,11 @@ function AppInner() {
         )}
         {showAdminPanel && <AdminPanel user={user} onClose={() => setShowAdminPanel(false)} />}
         {showHomeTour && <HomeTour onComplete={handleHomeTourComplete} />}
+        <CommandPalette
+          isOpen={showCommandPalette}
+          onClose={() => setShowCommandPalette(false)}
+          commands={commands}
+        />
       </>
     );
   }
@@ -701,6 +844,11 @@ function AppInner() {
       )}
       {showAdminPanel && <AdminPanel user={user} onClose={() => setShowAdminPanel(false)} />}
       {showHomeTour && <HomeTour onComplete={handleHomeTourComplete} />}
+      <CommandPalette
+        isOpen={showCommandPalette}
+        onClose={() => setShowCommandPalette(false)}
+        commands={commands}
+      />
       </>
       </motion.div>
     </AnimatePresence>

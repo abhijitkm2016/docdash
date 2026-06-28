@@ -334,6 +334,7 @@ function DashboardInner({
   onReset, remixControl, remixLoading, remixVersion,
   readOnly, isAuthenticated, onRequestSignIn,
   user, onSignOut, onShowHistory, onShowPrivacy, onShare, truncated, onShowTour,
+  onOpenCommandPalette,
 }) {
   const [showPrivacy, setShowPrivacy] = useState(false);
   const dimensions       = data.dimensions       || [];
@@ -373,6 +374,22 @@ function DashboardInner({
           <ThemeToggle asIcon />
           <IconButton icon="🛡️" label="Data & Privacy" onClick={privacyHandler} />
           {onShowTour && <IconButton icon="?" label="Take a tour" onClick={onShowTour} />}
+          {onOpenCommandPalette && (
+            <Tooltip text="Command palette (⌘K)">
+              <button
+                onClick={onOpenCommandPalette}
+                aria-label="Command palette"
+                style={{
+                  ...styles.iconBtn,
+                  fontSize: '12px',
+                  fontWeight: 600,
+                  letterSpacing: '0.03em',
+                }}
+              >
+                ⌘K
+              </button>
+            </Tooltip>
+          )}
 
           <div style={styles.topbarDivider} />
 
