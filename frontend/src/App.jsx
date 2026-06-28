@@ -123,7 +123,11 @@ function AppInner() {
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'instant' });
-  }, [result]);
+  }, [result, isLoading]);
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'instant' });
+  }, []);
 
   function handleHomeTourComplete(dontShow) {
     setShowHomeTour(false);
