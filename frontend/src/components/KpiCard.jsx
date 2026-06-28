@@ -11,11 +11,11 @@ export default function KpiCard({ label, value, unit, trend, soWhat, nowWhat }) 
   // Suppress unit if value already contains it (prevents "62.8% %" double-symbol)
   const showUnit = unit && !valueStr.includes(unit.trim());
 
-  const valueLength = valueStr.length;
+  const valueLength = valueStr.replace(/[\s,]/g, '').length;
   const valueFontSize =
-    valueLength > 12 ? '13px' :
-    valueLength > 8  ? '16px' :
-    valueLength > 5  ? '20px' :
+    valueLength > 14 ? '13px' :
+    valueLength > 10 ? '16px' :
+    valueLength > 7  ? '20px' :
     'clamp(22px, 2.5vw, 32px)';
 
   return (
