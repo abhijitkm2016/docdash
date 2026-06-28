@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { motion } from 'framer-motion';
 import ProfileMenu from './ProfileMenu';
 import Tooltip from './Tooltip';
 import ErrorBoundary from './ErrorBoundary';
@@ -344,12 +345,11 @@ function DashboardInner({
   return (
     <>
     {showPrivacy && <PrivacyModal onClose={() => setShowPrivacy(false)} />}
-    <div
-      style={{
-        ...styles.page,
-        opacity:    remixLoading ? 0.6 : 1,
-        transition: 'opacity 0.3s ease',
-      }}
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: remixLoading ? 0.6 : 1 }}
+      transition={{ duration: 0.3 }}
+      style={styles.page}
     >
       {/* ── Topbar ───────────────────────────────────────────── */}
       <div style={styles.topbar} className="no-print">
@@ -408,13 +408,18 @@ function DashboardInner({
       </div>
 
       {/* ── Title block: full width ───────────────────────────── */}
-      <div style={styles.titleBlock}>
+      <motion.div
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, ease: 'easeOut' }}
+        style={styles.titleBlock}
+      >
         <h1 style={styles.h1}>{data.title}</h1>
         {data.standfirst && (
           <p style={styles.standfirst}>{data.standfirst}</p>
         )}
         <p style={styles.metaLine}>Generated from source document</p>
-      </div>
+      </motion.div>
 
       {truncated && (
         <div style={{
@@ -456,7 +461,14 @@ function DashboardInner({
         <ErrorBoundary label="Key Metrics">
           <div data-tour="kpi-cards" style={styles.kpiGrid}>
             {(data.kpis || []).slice(0, 5).map((kpi, i) => (
-              <KpiCard key={i} {...kpi} />
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.35, delay: i * 0.07, ease: 'easeOut' }}
+              >
+                <KpiCard {...kpi} />
+              </motion.div>
             ))}
           </div>
         </ErrorBoundary>
@@ -470,13 +482,19 @@ function DashboardInner({
           )}
           <ActiveFilterBar dimensions={dimensions} />
           <div data-tour="charts" style={styles.chartsGrid}>
-            {(data.charts || []).map(chart => (
-              <ChartPanel
+            {(data.charts || []).map((chart, i) => (
+              <motion.div
                 key={chart.id}
-                chart={chart}
-                annotations={chartAnnotations.filter(a => a.chartId === chart.id)}
-                fieldMeta={fieldMetadata}
-              />
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.35, delay: i * 0.08, ease: 'easeOut' }}
+              >
+                <ChartPanel
+                  chart={chart}
+                  annotations={chartAnnotations.filter(a => a.chartId === chart.id)}
+                  fieldMeta={fieldMetadata}
+                />
+              </motion.div>
             ))}
           </div>
         </ErrorBoundary>
@@ -494,9 +512,14 @@ function DashboardInner({
       {/* ── Analysis ──────────────────────────────────────────── */}
       {data.narrative && (
         <ErrorBoundary label="Analysis">
-          <Section title="Analysis">
+          <motion.section
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.2, ease: 'easeOut' }}
+            style={styles.section}
+          >
             <NarrativeSection narrative={data.narrative} />
-          </Section>
+          </motion.section>
         </ErrorBoundary>
       )}
 
@@ -504,9 +527,14 @@ function DashboardInner({
       {data.watchList && (
         <ErrorBoundary label="Executive Watch List">
           <Section title="Executive Watch List">
-            <div data-tour="watch-list">
+            <motion.div
+              data-tour="watch-list"
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, delay: 0.25, ease: 'easeOut' }}
+            >
               <WatchList watchList={data.watchList} />
-            </div>
+            </motion.div>
           </Section>
         </ErrorBoundary>
       )}
@@ -532,7 +560,7 @@ function DashboardInner({
           </Section>
         )}
       </ErrorBoundary>
-    </div>
+    </motion.div>
     </>
   );
 }

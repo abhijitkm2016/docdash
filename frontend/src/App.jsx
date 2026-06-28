@@ -22,6 +22,8 @@ import ProfileMenu      from './components/ProfileMenu';
 import { HomeTour, DashboardTour, TOUR_HOME_KEY, TOUR_DASH_KEY } from './components/ProductTour';
 import Tooltip from './components/Tooltip';
 import Toast from './components/Toast';
+import { motion } from 'framer-motion';
+import DashboardSkeleton from './components/Skeleton';
 
 function detectErrorType(msg) {
   if (!msg) return 'generic';
@@ -228,7 +230,9 @@ function AppInner() {
   }
 
   async function handleLoadFromHistory(docId) {
+    setIsLoading(true);
     const doc = await loadDocument(docId);
+    setIsLoading(false);
     if (!doc) return;
     // Reconstruct a result-shaped object from the stored dashboard_data
     setResult({ dashboardData: doc.dashboard_data, standaloneHtml: '', sessionId: null });
@@ -386,7 +390,12 @@ function AppInner() {
 
   if (result) {
     return (
-      <div key={animKey} style={{ animation: 'fadeInUp 0.35s ease' }}>
+      <motion.div
+        key={animKey}
+        initial={{ opacity: 0, y: 24 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, ease: 'easeOut' }}
+      >
         {isSample && (
           <div style={styles.sampleBanner}>
             Viewing sample document — upload your own file to analyse it
@@ -471,7 +480,7 @@ function AppInner() {
             onDismiss={() => setToast(null)}
           />
         )}
-      </div>
+      </motion.div>
     );
   }
 
@@ -600,7 +609,16 @@ function AppInner() {
       {historySidebar}
 
       {/* Loading overlay — shown while Claude processes */}
-      {isLoading && <LoadingState />}
+      {isLoading && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.2 }}
+        >
+          <LoadingState />
+        </motion.div>
+      )}
 
       {/* Error state — shown when something goes wrong */}
       {!isLoading && error && (

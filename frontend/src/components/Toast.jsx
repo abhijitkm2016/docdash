@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { motion } from 'framer-motion';
 
 const VARIANTS = {
   success: {
@@ -47,8 +48,12 @@ export default function Toast({
   const isTop = position === 'top';
 
   return (
-    <div
+    <motion.div
       role={variant === 'error' ? 'alert' : 'status'}
+      initial={{ opacity: 0, y: isTop ? -16 : 16 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: isTop ? -16 : 16 }}
+      transition={{ duration: 0.2, ease: 'easeOut' }}
       style={{
         position: 'fixed',
         [isTop ? 'top' : 'bottom']: isTop ? '20px' : '24px',
@@ -68,7 +73,6 @@ export default function Toast({
         gap: '8px',
         whiteSpace: 'nowrap',
         maxWidth: '90vw',
-        animation: 'fadeInUp 0.2s ease',
       }}
     >
       <span style={{ flexShrink: 0 }}>{v.icon}</span>
@@ -93,6 +97,6 @@ export default function Toast({
           ✕
         </button>
       )}
-    </div>
+    </motion.div>
   );
 }
