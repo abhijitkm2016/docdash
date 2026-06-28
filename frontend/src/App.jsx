@@ -86,6 +86,14 @@ function AppInner() {
     }
   }, [authLoading]);
 
+  useEffect(() => {
+    if (result?.dashboardData?.title) {
+      document.title = `${result.dashboardData.title} — DocDash`;
+    } else {
+      document.title = 'DocDash — Turn any document into an executive dashboard';
+    }
+  }, [result]);
+
   function handleHomeTourComplete(dontShow) {
     setShowHomeTour(false);
     if (dontShow) localStorage.setItem(TOUR_HOME_KEY, 'true');

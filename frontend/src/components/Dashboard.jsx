@@ -257,7 +257,7 @@ function IconButton({ icon, label, onClick }) {
       className="no-print"
       onClick={onClick}
       aria-label={label}
-      title={label}
+      data-tooltip={label}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       style={{
@@ -373,7 +373,7 @@ function DashboardInner({
 
           {/* Primary actions */}
           {!readOnly && (
-            <div data-tour="export-btn" style={{ display: 'inline-block' }}>
+            <div data-tour="export-btn" data-tooltip="Export or share this dashboard" style={{ display: 'inline-block' }}>
               <ExportButton
                 dashboardData={data}
                 isAuthenticated={isAuthenticated}
@@ -382,11 +382,11 @@ function DashboardInner({
               />
             </div>
           )}
-          <div data-tour="remix-btn" style={{ display: 'inline-block' }}>
+          <div data-tour="remix-btn" data-tooltip="Generate a new perspective" style={{ display: 'inline-block' }}>
             {!readOnly && remixControl}
           </div>
           {!readOnly && (
-            <button onClick={onReset} style={styles.primaryBtn}>↑ New File</button>
+            <button onClick={onReset} data-tooltip="Start a new analysis" style={styles.primaryBtn}>↑ New File</button>
           )}
 
           <div style={styles.topbarDivider} />

@@ -482,6 +482,7 @@ export default function FileUpload({ onResult, onError, onWarning, onSampleLoad,
               )}
               <div
                 data-tour="deep-analysis"
+                data-tooltip={deep ? "Click to disable Deep Analysis" : "Click to enable Deep Analysis"}
                 style={{
                   display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                   background: deep ? '#EFF6FF' : 'var(--table-header-bg)',
@@ -555,6 +556,7 @@ export default function FileUpload({ onResult, onError, onWarning, onSampleLoad,
               className="fd-genbtn"
               onClick={handleGenerate}
               disabled={loading}
+              data-tooltip={deep ? "Reads the full document — 5 credits" : "Standard analysis — 1 credit"}
               style={{
                 ...styles.generateBtn,
                 opacity: loading ? 0.75 : 1,
