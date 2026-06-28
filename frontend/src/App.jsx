@@ -21,6 +21,7 @@ import AdminPanel       from './components/AdminPanel';
 import ProfileMenu      from './components/ProfileMenu';
 import { HomeTour, DashboardTour, TOUR_HOME_KEY, TOUR_DASH_KEY } from './components/ProductTour';
 import Tooltip from './components/Tooltip';
+import Toast from './components/Toast';
 
 function detectErrorType(msg) {
   if (!msg) return 'generic';
@@ -72,13 +73,20 @@ function AppInner() {
   const [isLoading,         setIsLoading]         = useState(false);
   const [guestMode,         setGuestMode]         = useState(false);
   const [showPricingModal,  setShowPricingModal]  = useState(false);
-  const [creditSuccess,     setCreditSuccess]     = useState(null);
   const [guestLimitMessage, setGuestLimitMessage] = useState(null);
   const [currentMode,       setCurrentMode]       = useState('auto');
   const [toast,             setToast]             = useState(null);
+  // toast shape: { message, variant, position, dismissible, autoDismiss }
   const [showAdminPanel,    setShowAdminPanel]    = useState(false);
   const [showHomeTour,      setShowHomeTour]      = useState(false);
   const [showDashboardTour, setShowDashboardTour] = useState(false);
+
+  function showToast(message, variant = 'success', options = {}) {
+    setToast({ message, variant, ...options });
+    if (options.autoDismiss !== false) {
+      setTimeout(() => setToast(null), options.dismissAfter || 3000);
+    }
+  }
 
   // ── Product tour auto-show ────────────────────────────────────────────────
   useEffect(() => {
@@ -240,8 +248,7 @@ function AppInner() {
     if (share) {
       const url = `${window.location.origin}/share/${share.share_token}`;
       await navigator.clipboard.writeText(url);
-      setToast('Link copied to clipboard');
-      setTimeout(() => setToast(null), 3000);
+      showToast('Link copied to clipboard', 'success');
     }
   }
 
@@ -411,21 +418,37 @@ function AppInner() {
         {!user && <GuestBanner onSignIn={() => setShowAuthModal(true)} />}
 
         {warning && (
-          <div style={styles.warningBanner} role="status">
-            ⚠ {warning}
-            <button onClick={() => setWarning(null)} style={styles.dismissBtn} aria-label="Dismiss">✕</button>
-          </div>
+          <Toast
+            message={warning}
+            variant="warning"
+            position="bottom"
+            autoDismiss={false}
+            dismissible={true}
+            onDismiss={() => setWarning(null)}
+          />
         )}
         {error && (
-          <div style={styles.errorBanner} role="alert">
-            <strong>Error:</strong> {error}
-          </div>
+          <Toast
+            message={`Error: ${error}`}
+            variant="error"
+            position="bottom"
+            autoDismiss={false}
+            dismissible={true}
+            onDismiss={() => setError(null)}
+          />
         )}
 
         {showAuthModal && (
           <>
             {guestLimitMessage && (
-              <div style={styles.guestLimitBanner}>{guestLimitMessage}</div>
+              <Toast
+                message={guestLimitMessage}
+                variant="warning"
+                position="top"
+                autoDismiss={false}
+                dismissible={true}
+                onDismiss={() => setGuestLimitMessage(null)}
+              />
             )}
             <AuthModal onClose={() => { setShowAuthModal(false); setGuestLimitMessage(null); }} />
           </>
@@ -434,20 +457,19 @@ function AppInner() {
           <PricingModal
             onClose={() => setShowPricingModal(false)}
             onSuccess={(amount, planName) => {
-              setCreditSuccess(`${amount} credits added — ${planName}`);
-              setTimeout(() => setCreditSuccess(null), 4000);
+              showToast(`${amount} credits added — ${planName}`, 'success');
             }}
           />
         )}
-        {creditSuccess && (
-          <div style={styles.creditToast}>
-            <span>✓</span> {creditSuccess}
-          </div>
-        )}
         {toast && (
-          <div style={styles.creditToast}>
-            <span>✓</span> {toast}
-          </div>
+          <Toast
+            message={toast.message}
+            variant={toast.variant || 'success'}
+            position={toast.position || 'bottom'}
+            autoDismiss={toast.autoDismiss !== false}
+            dismissible={toast.dismissible || false}
+            onDismiss={() => setToast(null)}
+          />
         )}
       </div>
     );
@@ -534,7 +556,14 @@ function AppInner() {
         {showAuthModal && (
           <>
             {guestLimitMessage && (
-              <div style={styles.guestLimitBanner}>{guestLimitMessage}</div>
+              <Toast
+                message={guestLimitMessage}
+                variant="warning"
+                position="top"
+                autoDismiss={false}
+                dismissible={true}
+                onDismiss={() => setGuestLimitMessage(null)}
+              />
             )}
             <AuthModal onClose={() => { setShowAuthModal(false); setGuestLimitMessage(null); }} />
           </>
@@ -543,15 +572,19 @@ function AppInner() {
           <PricingModal
             onClose={() => setShowPricingModal(false)}
             onSuccess={(amount, planName) => {
-              setCreditSuccess(`${amount} credits added — ${planName}`);
-              setTimeout(() => setCreditSuccess(null), 4000);
+              showToast(`${amount} credits added — ${planName}`, 'success');
             }}
           />
         )}
-        {creditSuccess && (
-          <div style={styles.creditToast}>
-            <span>✓</span> {creditSuccess}
-          </div>
+        {toast && (
+          <Toast
+            message={toast.message}
+            variant={toast.variant || 'success'}
+            position={toast.position || 'bottom'}
+            autoDismiss={toast.autoDismiss !== false}
+            dismissible={toast.dismissible || false}
+            onDismiss={() => setToast(null)}
+          />
         )}
         {showAdminPanel && <AdminPanel user={user} onClose={() => setShowAdminPanel(false)} />}
         {showHomeTour && <HomeTour onComplete={handleHomeTourComplete} />}
@@ -596,32 +629,47 @@ function AppInner() {
       </div>
 
       {warning && (
-        <div style={styles.warningBanner} role="status">
-          ⚠ {warning}
-          <button onClick={() => setWarning(null)} style={styles.dismissBtn} aria-label="Dismiss">✕</button>
-        </div>
+        <Toast
+          message={warning}
+          variant="warning"
+          position="bottom"
+          autoDismiss={false}
+          dismissible={true}
+          onDismiss={() => setWarning(null)}
+        />
       )}
       {showAuthModal && (
-          <>
-            {guestLimitMessage && (
-              <div style={styles.guestLimitBanner}>{guestLimitMessage}</div>
-            )}
-            <AuthModal onClose={() => { setShowAuthModal(false); setGuestLimitMessage(null); }} />
-          </>
-        )}
+        <>
+          {guestLimitMessage && (
+            <Toast
+              message={guestLimitMessage}
+              variant="warning"
+              position="top"
+              autoDismiss={false}
+              dismissible={true}
+              onDismiss={() => setGuestLimitMessage(null)}
+            />
+          )}
+          <AuthModal onClose={() => { setShowAuthModal(false); setGuestLimitMessage(null); }} />
+        </>
+      )}
       {showPricingModal && (
         <PricingModal
           onClose={() => setShowPricingModal(false)}
           onSuccess={(amount, planName) => {
-            setCreditSuccess(`${amount} credits added — ${planName}`);
-            setTimeout(() => setCreditSuccess(null), 4000);
+            showToast(`${amount} credits added — ${planName}`, 'success');
           }}
         />
       )}
-      {creditSuccess && (
-        <div style={styles.creditToast}>
-          <span>✓</span> {creditSuccess}
-        </div>
+      {toast && (
+        <Toast
+          message={toast.message}
+          variant={toast.variant || 'success'}
+          position={toast.position || 'bottom'}
+          autoDismiss={toast.autoDismiss !== false}
+          dismissible={toast.dismissible || false}
+          onDismiss={() => setToast(null)}
+        />
       )}
       {showAdminPanel && <AdminPanel user={user} onClose={() => setShowAdminPanel(false)} />}
       {showHomeTour && <HomeTour onComplete={handleHomeTourComplete} />}
@@ -711,25 +759,6 @@ const styles = {
     maxWidth: 1200,
     margin: '0 auto 0',
   },
-  nudgeBanner: {
-    background: '#FFF7ED',
-    borderBottom: '1px solid #FED7AA',
-    color: '#92400E',
-    fontSize: '0.75rem',
-    padding: '6px 24px',
-    textAlign: 'center',
-  },
-  nudgeLink: {
-    background: 'none',
-    border: 'none',
-    color: '#C2410C',
-    fontSize: '0.75rem',
-    fontWeight: 600,
-    cursor: 'pointer',
-    padding: 0,
-    textDecoration: 'underline',
-    fontFamily: 'inherit',
-  },
   sidebar: {
     position: 'fixed',
     left: 0,
@@ -775,83 +804,5 @@ const styles = {
     fontWeight: 600,
     cursor: 'pointer',
     fontFamily: 'inherit',
-  },
-  errorBanner: {
-    position: 'fixed',
-    bottom: '1.5rem',
-    left: '50%',
-    transform: 'translateX(-50%)',
-    background: '#7f1d1d',
-    border: '1px solid var(--alert)',
-    color: '#fca5a5',
-    padding: '0.75rem 1.5rem',
-    borderRadius: '0.5rem',
-    fontSize: '0.875rem',
-    maxWidth: '90vw',
-    zIndex: 100,
-  },
-  warningBanner: {
-    position: 'fixed',
-    bottom: '1.5rem',
-    left: '50%',
-    transform: 'translateX(-50%)',
-    background: '#78350f',
-    border: '1px solid #d97706',
-    color: '#fde68a',
-    padding: '0.75rem 1.5rem',
-    borderRadius: '0.5rem',
-    fontSize: '0.875rem',
-    maxWidth: '90vw',
-    zIndex: 100,
-    display: 'flex',
-    alignItems: 'center',
-    gap: '0.75rem',
-  },
-  dismissBtn: {
-    background: 'none',
-    border: 'none',
-    color: '#fde68a',
-    cursor: 'pointer',
-    fontSize: '1rem',
-    lineHeight: 1,
-    padding: 0,
-    flexShrink: 0,
-    opacity: 0.7,
-  },
-  guestLimitBanner: {
-    position: 'fixed',
-    top: '20px',
-    left: '50%',
-    transform: 'translateX(-50%)',
-    zIndex: 60,
-    background: '#FFF7ED',
-    border: '1px solid #FED7AA',
-    borderRadius: '10px',
-    padding: '12px 20px',
-    fontSize: '13px',
-    color: '#92400E',
-    fontWeight: 500,
-    textAlign: 'center',
-    maxWidth: '380px',
-    boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-    whiteSpace: 'nowrap',
-  },
-  creditToast: {
-    position: 'fixed',
-    bottom: '24px',
-    left: '50%',
-    transform: 'translateX(-50%)',
-    zIndex: 100,
-    background: '#0F172A',
-    color: '#fff',
-    padding: '12px 24px',
-    borderRadius: '10px',
-    fontSize: '13px',
-    fontWeight: 500,
-    boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px',
-    whiteSpace: 'nowrap',
   },
 };
