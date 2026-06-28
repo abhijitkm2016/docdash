@@ -43,11 +43,28 @@ export function useDocuments() {
 
   const updateDocument = async (id, { title }) => {
     if (!user || !id) return false;
+
+    // First fetch current dashboard_data so we can patch the title inside it
+    const { data: existing, error: fetchError } = await supabase
+      .from('documents')
+      .select('dashboard_data')
+      .eq('id', id)
+      .eq('user_id', user.id)
+      .single();
+
+    if (fetchError) { console.error('updateDocument fetch error:', fetchError); return false; }
+
+    const updatedDashboardData = {
+      ...(existing.dashboard_data || {}),
+      title,
+    };
+
     const { error } = await supabase
       .from('documents')
-      .update({ title })
+      .update({ title, dashboard_data: updatedDashboardData })
       .eq('id', id)
       .eq('user_id', user.id);
+
     if (error) { console.error('updateDocument error:', error); return false; }
     return true;
   };
