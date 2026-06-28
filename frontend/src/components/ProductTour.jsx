@@ -218,6 +218,7 @@ function TourOverlay({ steps, onComplete }) {
           boxShadow:    '0 16px 48px rgba(0,0,0,0.65)',
           overflowY:    'auto',
           maxHeight:    maxH,
+          boxSizing:    'border-box',
           display:      'flex',
           flexDirection: 'column',
         }}>
