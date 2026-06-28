@@ -9,7 +9,9 @@ export default function AskYourData({ sessionId, dashboardData }) {
   const bottomRef = useRef(null);
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (history.length > 0) {
+      bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
   }, [history, loading]);
 
   async function submit() {
