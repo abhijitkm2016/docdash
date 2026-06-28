@@ -432,5 +432,13 @@ export function HomeTour({ onComplete }) {
 }
 
 export function DashboardTour({ onComplete }) {
-  return <TourOverlay steps={DASH_STEPS} onComplete={onComplete} />;
+  const [activeSteps, setActiveSteps] = useState([]);
+
+  useEffect(() => {
+    const found = DASH_STEPS.filter(s => !s.selector || !!document.querySelector(s.selector));
+    setActiveSteps(found);
+  }, []);
+
+  if (!activeSteps.length) return null;
+  return <TourOverlay steps={activeSteps} onComplete={onComplete} />;
 }
