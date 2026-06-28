@@ -297,7 +297,7 @@ function AppInner() {
 
     return (
       <div style={{ position: 'relative', display: 'inline-block' }}>
-        <div className="remix-tooltip-wrapper">
+        <Tooltip text={tooltipText}>
           <button
             onClick={() => { if (!isDisabled) setShowRemixPopover(v => !v); }}
             disabled={isDisabled}
@@ -316,8 +316,7 @@ function AppInner() {
           >
             🔀 {remixLoading ? 'Remixing…' : 'Remix'}
           </button>
-          <div className="remix-tooltip">{tooltipText}</div>
-        </div>
+        </Tooltip>
         {showRemixPopover && sessionId && (
           <RemixPopover
             onAutoRemix={handleAutoRemix}
