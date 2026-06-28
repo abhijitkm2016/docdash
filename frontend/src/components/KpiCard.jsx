@@ -13,9 +13,9 @@ export default function KpiCard({ label, value, unit, trend, soWhat, nowWhat }) 
 
   const valueLength = valueStr.length;
   const valueFontSize =
-    valueLength > 15 ? '14px' :
-    valueLength > 10 ? '18px' :
-    valueLength > 6  ? '22px' :
+    valueLength > 12 ? '13px' :
+    valueLength > 8  ? '16px' :
+    valueLength > 5  ? '20px' :
     'clamp(22px, 2.5vw, 32px)';
 
   return (
@@ -67,7 +67,8 @@ const styles = {
     display: 'flex',
     alignItems: 'baseline',
     gap: '0.25rem',
-    flexWrap: 'wrap',
+    flexWrap: 'nowrap',
+    overflow: 'hidden',
   },
   value: {
     fontSize: 'clamp(22px, 2.5vw, 32px)',
