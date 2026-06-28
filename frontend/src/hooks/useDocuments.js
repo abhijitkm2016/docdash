@@ -41,6 +41,17 @@ export function useDocuments() {
     return data
   }
 
+  const updateDocument = async (id, { title }) => {
+    if (!user || !id) return false;
+    const { error } = await supabase
+      .from('documents')
+      .update({ title })
+      .eq('id', id)
+      .eq('user_id', user.id);
+    if (error) { console.error('updateDocument error:', error); return false; }
+    return true;
+  };
+
   const deleteDocument = async (documentId) => {
     const { error } = await supabase
       .from('documents')
@@ -59,5 +70,5 @@ export function useDocuments() {
     return data
   }
 
-  return { documents, loading, error, saveDocument, deleteDocument, loadDocument, refetch: fetchDocuments }
+  return { documents, loading, error, saveDocument, updateDocument, deleteDocument, loadDocument, refetch: fetchDocuments }
 }

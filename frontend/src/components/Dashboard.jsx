@@ -328,13 +328,144 @@ function ActiveFilterBar({ dimensions }) {
   );
 }
 
+// ── Inline title editor ───────────────────────────────────────────────────────
+function InlineTitle({ title, onSave, readOnly }) {
+  const [editing, setEditing] = useState(false);
+  const [value,   setValue]   = useState(title);
+  const [saving,  setSaving]  = useState(false);
+  const inputRef = useRef(null);
+
+  useEffect(() => { setValue(title); }, [title]);
+
+  useEffect(() => {
+    if (editing) setTimeout(() => inputRef.current?.focus(), 50);
+  }, [editing]);
+
+  async function handleSave() {
+    const trimmed = value.trim();
+    if (!trimmed || trimmed === title) { setEditing(false); setValue(title); return; }
+    setSaving(true);
+    await onSave?.(trimmed);
+    setSaving(false);
+    setEditing(false);
+  }
+
+  function handleKeyDown(e) {
+    if (e.key === 'Enter')  { e.preventDefault(); handleSave(); }
+    if (e.key === 'Escape') { setEditing(false); setValue(title); }
+  }
+
+  if (readOnly) {
+    return <h1 style={titleStyles.h1}>{title}</h1>;
+  }
+
+  if (editing) {
+    return (
+      <div style={{ position: 'relative', marginBottom: '0.5rem' }}>
+        <textarea
+          ref={inputRef}
+          value={value}
+          onChange={e => setValue(e.target.value)}
+          onKeyDown={handleKeyDown}
+          onBlur={handleSave}
+          rows={2}
+          style={{
+            ...titleStyles.h1,
+            width: '100%',
+            background: 'var(--input-bg)',
+            border: '2px solid #2563EB',
+            borderRadius: '8px',
+            padding: '6px 10px',
+            resize: 'none',
+            outline: 'none',
+            fontFamily: 'inherit',
+            boxSizing: 'border-box',
+            lineHeight: 1.25,
+            color: 'var(--text-primary)',
+          }}
+        />
+        <div style={{ display: 'flex', gap: '6px', marginTop: '6px', alignItems: 'center' }}>
+          <button
+            onClick={handleSave}
+            disabled={saving}
+            style={{
+              background: '#2563EB', color: '#fff', border: 'none',
+              borderRadius: '6px', padding: '4px 12px', fontSize: '12px',
+              fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
+            }}
+          >
+            {saving ? 'Saving…' : 'Save'}
+          </button>
+          <button
+            onClick={() => { setEditing(false); setValue(title); }}
+            style={{
+              background: 'none', border: '1px solid var(--card-border)',
+              borderRadius: '6px', padding: '4px 12px', fontSize: '12px',
+              color: 'var(--text-secondary)', cursor: 'pointer', fontFamily: 'inherit',
+            }}
+          >
+            Cancel
+          </button>
+          <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+            Enter to save · Esc to cancel
+          </span>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ position: 'relative', display: 'inline-block', maxWidth: '100%', marginBottom: '0.5rem' }}>
+      <h1
+        onClick={() => setEditing(true)}
+        style={{
+          ...titleStyles.h1,
+          cursor: 'text',
+          borderRadius: '6px',
+          padding: '2px 4px',
+          margin: '-2px -4px',
+          transition: 'background 0.15s ease',
+        }}
+        onMouseEnter={e => e.currentTarget.style.background = 'var(--accent-muted, #EFF6FF)'}
+        onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+        title="Click to edit title"
+      >
+        {title}
+        <span style={{
+          marginLeft: '8px',
+          fontSize: '13px',
+          opacity: 0,
+          transition: 'opacity 0.15s',
+          color: '#2563EB',
+          fontWeight: 400,
+        }}
+          className="edit-hint"
+        >
+          ✎
+        </span>
+      </h1>
+    </div>
+  );
+}
+
+const titleStyles = {
+  h1: {
+    fontSize: 'clamp(1.25rem, 3vw, 1.75rem)',
+    fontWeight: 700,
+    color: 'var(--text-primary)',
+    lineHeight: 1.25,
+    letterSpacing: '-0.02em',
+    margin: 0,
+  },
+};
+
 // ── Dashboard inner ───────────────────────────────────────────────────────────
 function DashboardInner({
   data, standaloneHtml, sessionId,
   onReset, remixControl, remixLoading, remixVersion,
   readOnly, isAuthenticated, onRequestSignIn,
   user, onSignOut, onShowHistory, onShowPrivacy, onShare, truncated, onShowTour,
-  onOpenCommandPalette,
+  onOpenCommandPalette, onTitleSave,
 }) {
   const [showPrivacy, setShowPrivacy] = useState(false);
   const dimensions       = data.dimensions       || [];
@@ -432,7 +563,11 @@ function DashboardInner({
         transition={{ duration: 0.4, ease: 'easeOut' }}
         style={styles.titleBlock}
       >
-        <h1 style={styles.h1}>{data.title}</h1>
+        <InlineTitle
+          title={data.title}
+          onSave={onTitleSave}
+          readOnly={readOnly}
+        />
         {data.standfirst && (
           <p style={styles.standfirst}>{data.standfirst}</p>
         )}

@@ -58,7 +58,7 @@ function AppInner() {
   }
 
   const { user, signOut, loading: authLoading } = useAuth();
-  const { saveDocument, loadDocument } = useDocuments();
+  const { saveDocument, loadDocument, updateDocument } = useDocuments();
   const { credits, deductCredit, restoreCredit } = useCredits();
   const { createShare } = useShares();
 
@@ -260,6 +260,18 @@ function AppInner() {
     setError(null);
     setIsSample(false);
     setShowHistory(false);
+  }
+
+  async function handleTitleSave(newTitle) {
+    if (!currentDocumentId || !result) return;
+    const ok = await updateDocument(currentDocumentId, { title: newTitle });
+    if (ok && result.dashboardData) {
+      setResult(prev => ({
+        ...prev,
+        dashboardData: { ...prev.dashboardData, title: newTitle },
+      }));
+      document.title = `${newTitle} — DocDash`;
+    }
   }
 
   async function handleShare() {
@@ -536,6 +548,7 @@ function AppInner() {
           truncated={!!result.truncated}
           onShowTour={handleShowDashboardTour}
           onOpenCommandPalette={() => setShowCommandPalette(true)}
+          onTitleSave={user && currentDocumentId ? handleTitleSave : null}
         />
         {showDashboardTour && <DashboardTour onComplete={handleDashboardTourComplete} />}
         <CommandPalette
