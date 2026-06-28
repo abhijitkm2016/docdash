@@ -4,6 +4,7 @@ import App from './App.jsx';
 import { AuthProvider } from './contexts/AuthContext.jsx';
 import './index.css';
 import { Analytics } from '@vercel/analytics/react';
+import { SpeedInsights } from '@vercel/speed-insights/react';
 
 class ErrorBoundary extends React.Component {
   constructor(props) {
@@ -86,5 +87,6 @@ ReactDOM.createRoot(document.getElementById('root')).render(
       </AuthProvider>
     </ErrorBoundary>
     <Analytics />
+    <SpeedInsights />
   </React.StrictMode>
 );
