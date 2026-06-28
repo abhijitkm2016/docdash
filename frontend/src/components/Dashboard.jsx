@@ -377,6 +377,7 @@ function DashboardInner({
           {onOpenCommandPalette && (
             <Tooltip text="Command palette (⌘K)">
               <button
+                data-tour="command-palette-btn"
                 onClick={onOpenCommandPalette}
                 aria-label="Command palette"
                 style={{

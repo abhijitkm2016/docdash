@@ -425,6 +425,11 @@ const DASH_STEPS = [
     body: 'Generate a fresh take on the same document with a different analytical angle.',
     cta: 'Click Remix to try another perspective',
   },
+  {
+    selector: '[data-tour="command-palette-btn"]',
+    title: '⌘K Command Palette',
+    body: 'Press Cmd+K (or Ctrl+K) anywhere to instantly access any action — export, share, remix, history, and more — without leaving your keyboard.',
+  },
 ];
 
 export function HomeTour({ onComplete }) {
