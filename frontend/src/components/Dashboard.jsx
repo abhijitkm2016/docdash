@@ -239,9 +239,11 @@ function ThemeToggle({ asIcon = false }) {
   const icon  = theme === 'dark' ? '☀️' : '🌙';
   if (asIcon) {
     return (
-      <button className="no-print" onClick={toggle} style={styles.iconBtn} aria-label={label} title={label}>
-        {icon}
-      </button>
+      <Tooltip text={label}>
+        <button className="no-print" onClick={toggle} style={styles.iconBtn} aria-label={label}>
+          {icon}
+        </button>
+      </Tooltip>
     );
   }
   return (
