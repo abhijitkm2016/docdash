@@ -203,10 +203,7 @@ input, button { font-family: inherit; }
 
 [data-tooltip]::after {
   content: attr(data-tooltip);
-  position: absolute;
-  bottom: calc(100% + 8px);
-  left: 50%;
-  transform: translateX(-50%);
+  position: fixed;
   background: #0F172A;
   color: #F8FAFC;
   font-size: 11px;
@@ -217,9 +214,12 @@ input, button { font-family: inherit; }
   pointer-events: none;
   opacity: 0;
   transition: opacity 0.15s ease;
-  z-index: 200;
+  z-index: 9999;
   font-family: inherit;
   letter-spacing: 0.01em;
+  top: 60px;
+  left: 50%;
+  transform: translateX(-50%);
 }
 
 [data-tooltip]:hover::after {
@@ -245,8 +245,8 @@ input, button { font-family: inherit; }
   background: #94A3B8;
 }
 
-/* ── Smooth transitions on theme change ───────────────────────────────────── */
-*, *::before, *::after {
+/* Selective transitions only — avoid applying to all elements as it blocks scroll */
+body, [data-theme-transition] {
   transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
 }
 
