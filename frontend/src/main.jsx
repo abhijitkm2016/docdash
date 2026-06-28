@@ -6,9 +6,7 @@ import './index.css';
 import { Analytics } from '@vercel/analytics/react';
 import { SpeedInsights } from '@vercel/speed-insights/react';
 
-// Force scroll to top on every page load
 window.history.scrollRestoration = 'manual';
-window.scrollTo(0, 0);
 
 class ErrorBoundary extends React.Component {
   constructor(props) {
