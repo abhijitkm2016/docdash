@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import Tooltip from './Tooltip';
+import InfoTooltip from './InfoTooltip';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 const ACCEPTED       = '.pdf,.xlsx,.xls,.csv,.docx,.doc,.pptx,.ppt';
@@ -310,17 +311,19 @@ export default function FileUpload({ onResult, onError, onWarning, onSampleLoad,
 
           {/* Analysis Mode — Segmented Control */}
           <div data-tour="mode-selector" style={{ padding: '1.25rem 2rem 0' }}>
-            <p style={{
-              fontSize: '11px',
-              fontWeight: '700',
-              color: 'var(--text-secondary)',
-              marginBottom: '10px',
-              marginTop: 0,
-              textTransform: 'uppercase',
-              letterSpacing: '0.08em',
-            }}>
-              Analysis Mode
-            </p>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '10px', marginTop: 0 }}>
+              <p style={{
+                fontSize: '11px',
+                fontWeight: '700',
+                color: 'var(--text-secondary)',
+                textTransform: 'uppercase',
+                letterSpacing: '0.08em',
+                margin: 0,
+              }}>
+                Analysis Mode
+              </p>
+              <InfoTooltip text="Auto works for most documents. Finance, HR, Sales and Research modes tune the AI to extract domain-specific metrics." />
+            </div>
             <div style={{
               display: 'flex',
               width: '100%',
@@ -492,9 +495,12 @@ export default function FileUpload({ onResult, onError, onWarning, onSampleLoad,
                 onClick={() => setDeep(d => !d)}
               >
                 <div>
-                  <span style={{ fontSize: '13px', fontWeight: 600, color: deep ? '#1D4ED8' : 'var(--text-primary)' }}>
-                    🔍 Deep Analysis
-                  </span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span style={{ fontSize: '13px', fontWeight: 600, color: deep ? '#1D4ED8' : 'var(--text-primary)' }}>
+                      🔍 Deep Analysis
+                    </span>
+                    <InfoTooltip text="Sends the full document to Claude — no truncation. Best for large financial reports, annual filings, and research papers. Costs 5 credits instead of 1." />
+                  </div>
                   <span style={{ fontSize: '11px', color: 'var(--text-muted)', marginLeft: '8px' }}>
                     Full document · richer output · 5 credits
                   </span>

@@ -93,14 +93,39 @@ function AppInner() {
 
   useEffect(() => {
     function handleKeyDown(e) {
+      // Ignore shortcuts when typing in an input, textarea, or contenteditable
+      const tag = e.target.tagName.toLowerCase();
+      const isTyping = tag === 'input' || tag === 'textarea' || e.target.isContentEditable;
+
+      // Cmd+K — command palette (always)
       if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
         e.preventDefault();
         setShowCommandPalette(p => !p);
+        return;
+      }
+
+      // Single key shortcuts — only when not typing
+      if (isTyping) return;
+
+      if (e.key === 'h' || e.key === 'H') {
+        setShowHistory(h => !h);
+      }
+      if ((e.key === 'n' || e.key === 'N') && result) {
+        handleReset();
+      }
+      if ((e.key === 'r' || e.key === 'R') && result && sessionId) {
+        setShowRemixPopover(v => !v);
+      }
+      if (e.key === 'Escape') {
+        setShowCommandPalette(false);
+        setShowRemixPopover(false);
+        setShowHistory(false);
+        setShowPricingModal(false);
       }
     }
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, []);
+  }, [result, sessionId]);
 
   function showToast(message, variant = 'success', options = {}) {
     setToast({ message, variant, ...options });
@@ -395,7 +420,7 @@ function AppInner() {
       icon: '📄',
       label: 'New File',
       description: 'Start a new document analysis',
-      shortcut: '',
+      shortcut: 'N',
       keywords: ['upload', 'new', 'start', 'reset'],
       action: handleReset,
     },
@@ -404,6 +429,7 @@ function AppInner() {
       icon: '📂',
       label: 'Open History',
       description: 'View your previously generated dashboards',
+      shortcut: 'H',
       keywords: ['history', 'documents', 'previous', 'saved'],
       action: () => setShowHistory(h => !h),
     },
@@ -461,6 +487,7 @@ function AppInner() {
         icon: '🔀',
         label: 'Auto Remix',
         description: 'Generate a new perspective on this document',
+        shortcut: 'R',
         keywords: ['remix', 'regenerate', 'new perspective'],
         action: handleAutoRemix,
       },
