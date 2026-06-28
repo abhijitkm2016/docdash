@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import ProfileMenu from './ProfileMenu';
 import Tooltip from './Tooltip';
+import ErrorBoundary from './ErrorBoundary';
 import { FilterProvider, useFilter } from '../context/FilterContext';
 import AuthGate from './AuthGate';
 import { useTheme } from '../context/ThemeContext';
@@ -450,71 +451,85 @@ function DashboardInner({
 
       {/* ── KPI Strip ─────────────────────────────────────────── */}
       <Section title="Key Metrics">
-        <div data-tour="kpi-cards" style={styles.kpiGrid}>
-          {(data.kpis || []).slice(0, 5).map((kpi, i) => (
-            <KpiCard key={i} {...kpi} />
-          ))}
-        </div>
+        <ErrorBoundary label="Key Metrics">
+          <div data-tour="kpi-cards" style={styles.kpiGrid}>
+            {(data.kpis || []).slice(0, 5).map((kpi, i) => (
+              <KpiCard key={i} {...kpi} />
+            ))}
+          </div>
+        </ErrorBoundary>
       </Section>
 
       {/* ── Charts ────────────────────────────────────────────── */}
       <Section title="Charts">
-        {dimensions.length > 0 && (
-          <DimensionFilters dimensions={dimensions} />
-        )}
-        <ActiveFilterBar dimensions={dimensions} />
-        <div data-tour="charts" style={styles.chartsGrid}>
-          {(data.charts || []).map(chart => (
-            <ChartPanel
-              key={chart.id}
-              chart={chart}
-              annotations={chartAnnotations.filter(a => a.chartId === chart.id)}
-              fieldMeta={fieldMetadata}
-            />
-          ))}
-        </div>
+        <ErrorBoundary label="Charts">
+          {dimensions.length > 0 && (
+            <DimensionFilters dimensions={dimensions} />
+          )}
+          <ActiveFilterBar dimensions={dimensions} />
+          <div data-tour="charts" style={styles.chartsGrid}>
+            {(data.charts || []).map(chart => (
+              <ChartPanel
+                key={chart.id}
+                chart={chart}
+                annotations={chartAnnotations.filter(a => a.chartId === chart.id)}
+                fieldMeta={fieldMetadata}
+              />
+            ))}
+          </div>
+        </ErrorBoundary>
       </Section>
 
       {/* ── Ask Your Data ─────────────────────────────────────── */}
       <Section title="Ask Your Data">
-        <div data-tour="ask-data">
-          <AskYourData sessionId={sessionId} dashboardData={data} />
-        </div>
+        <ErrorBoundary label="Ask Your Data">
+          <div data-tour="ask-data">
+            <AskYourData sessionId={sessionId} dashboardData={data} />
+          </div>
+        </ErrorBoundary>
       </Section>
 
       {/* ── Analysis ──────────────────────────────────────────── */}
       {data.narrative && (
-        <Section title="Analysis">
-          <NarrativeSection narrative={data.narrative} />
-        </Section>
+        <ErrorBoundary label="Analysis">
+          <Section title="Analysis">
+            <NarrativeSection narrative={data.narrative} />
+          </Section>
+        </ErrorBoundary>
       )}
 
       {/* ── Watch List ────────────────────────────────────────── */}
       {data.watchList && (
-        <Section title="Executive Watch List">
-          <div data-tour="watch-list">
-            <WatchList watchList={data.watchList} />
-          </div>
-        </Section>
+        <ErrorBoundary label="Executive Watch List">
+          <Section title="Executive Watch List">
+            <div data-tour="watch-list">
+              <WatchList watchList={data.watchList} />
+            </div>
+          </Section>
+        </ErrorBoundary>
       )}
 
       {/* ── Data Table ────────────────────────────────────────── */}
-      {data.tableData?.rows?.length > 0 && (
-        <Section title="Data Table">
-          <DataTable
-            columns={data.tableData.columns}
-            rows={data.tableData.rows}
-            dimensions={dimensions}
-          />
-        </Section>
-      )}
+      <ErrorBoundary label="Data Table">
+        {data.tableData?.rows?.length > 0 && (
+          <Section title="Data Table">
+            <DataTable
+              columns={data.tableData.columns}
+              rows={data.tableData.rows}
+              dimensions={dimensions}
+            />
+          </Section>
+        )}
+      </ErrorBoundary>
 
       {/* ── Data Inventory ────────────────────────────────────── */}
-      {data.dataInventory && (
-        <Section title="Data Inventory">
-          <DataInventory inventory={data.dataInventory} metadata={data.metadata} />
-        </Section>
-      )}
+      <ErrorBoundary label="Data Inventory">
+        {data.dataInventory && (
+          <Section title="Data Inventory">
+            <DataInventory inventory={data.dataInventory} metadata={data.metadata} />
+          </Section>
+        )}
+      </ErrorBoundary>
     </div>
     </>
   );
