@@ -11,12 +11,19 @@ export default function KpiCard({ label, value, unit, trend, soWhat, nowWhat }) 
   // Suppress unit if value already contains it (prevents "62.8% %" double-symbol)
   const showUnit = unit && !valueStr.includes(unit.trim());
 
+  const valueLength = valueStr.length;
+  const valueFontSize =
+    valueLength > 15 ? '14px' :
+    valueLength > 10 ? '18px' :
+    valueLength > 6  ? '22px' :
+    'clamp(22px, 2.5vw, 32px)';
+
   return (
     <div className="kpi-card" style={styles.card}>
       <p style={styles.label}>{label}</p>
 
       <div style={{ ...styles.valueRow, color: trendColor }}>
-        <span style={styles.value}>{valueStr}</span>
+        <span style={{ ...styles.value, fontSize: valueFontSize }}>{valueStr}</span>
         {showUnit  && <span style={styles.unit}>{unit}</span>}
         {trendIcon && <span style={styles.trendIcon}>{trendIcon}</span>}
       </div>
@@ -45,6 +52,9 @@ const styles = {
     flexDirection: 'column',
     gap: '0.375rem',
     minWidth: '180px',
+    height: '100%',
+    boxSizing: 'border-box',
+    overflow: 'hidden',
   },
   label: {
     fontSize: '0.75rem',
@@ -78,6 +88,10 @@ const styles = {
     color: 'var(--text-secondary)',
     lineHeight: 1.5,
     marginTop: '0.25rem',
+    display: '-webkit-box',
+    WebkitLineClamp: 4,
+    WebkitBoxOrient: 'vertical',
+    overflow: 'hidden',
   },
   nowWhat: {
     fontSize: '0.75rem',
