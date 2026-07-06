@@ -90,6 +90,7 @@ function AppInner() {
   const [showHomeTour,        setShowHomeTour]        = useState(false);
   const [showDashboardTour,   setShowDashboardTour]   = useState(false);
   const [showCommandPalette,  setShowCommandPalette]  = useState(false);
+  const [showMobileMenu,      setShowMobileMenu]      = useState(false);
 
   useEffect(() => {
     function handleKeyDown(e) {
@@ -681,7 +682,7 @@ function AppInner() {
   const landingBarSpacer = <div style={{ height: 48 }} />;
 
   const landingBar = (
-    <div style={styles.landingAuthBar} className="landing-nav-mobile">
+    <div style={{ ...styles.landingAuthBar, flexWrap: 'wrap' }} className="landing-nav-mobile">
       <button
         onClick={() => window.location.href = '/'}
         style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
@@ -766,7 +767,74 @@ function AppInner() {
             </button>
           </Tooltip>
         )}
+        {/* Hamburger button — visible only on mobile */}
+        <button
+          className="hamburger-btn"
+          onClick={() => setShowMobileMenu(m => !m)}
+          style={{
+            display: 'none',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: 'transparent',
+            border: '1px solid var(--card-border)',
+            borderRadius: '7px',
+            padding: '5px 10px',
+            fontSize: '16px',
+            color: 'var(--text-secondary)',
+            cursor: 'pointer',
+            fontFamily: 'inherit',
+            minHeight: 0,
+            minWidth: 0,
+          }}
+          aria-label="Menu"
+        >
+          {showMobileMenu ? '✕' : '☰'}
+        </button>
       </div>
+      {/* Mobile dropdown menu */}
+      {showMobileMenu && (
+        <div
+          className="mobile-menu"
+          style={{
+            display: 'none',
+            flexDirection: 'column',
+            width: '100%',
+            borderTop: '1px solid var(--card-border)',
+            paddingTop: '0.5rem',
+            paddingBottom: '0.5rem',
+            gap: '0.25rem',
+          }}
+        >
+          {user && (
+            <button
+              onClick={() => { setShowHistory(h => !h); setShowMobileMenu(false); }}
+              style={mobileMenuItemStyle}
+            >
+              📄 History
+            </button>
+          )}
+          <button
+            onClick={() => { handleShowHomeTour(); setShowMobileMenu(false); }}
+            style={mobileMenuItemStyle}
+          >
+            ? Tour
+          </button>
+          <button
+            onClick={() => { setShowCommandPalette(true); setShowMobileMenu(false); }}
+            style={mobileMenuItemStyle}
+          >
+            ⌘K Command Palette
+          </button>
+          {user?.id === '363022d8-cfc1-4e58-ac29-ef9fe6ac287e' && (
+            <button
+              onClick={() => { setShowAdminPanel(true); setShowMobileMenu(false); }}
+              style={mobileMenuItemStyle}
+            >
+              ⚙️ Admin
+            </button>
+          )}
+        </div>
+      )}
     </div>
   );
 
@@ -970,6 +1038,19 @@ const creditChipStyle = {
   cursor: 'pointer',
   fontFamily: 'inherit',
   whiteSpace: 'nowrap',
+};
+
+const mobileMenuItemStyle = {
+  background: 'none',
+  border: 'none',
+  color: 'var(--text-primary)',
+  fontSize: '14px',
+  textAlign: 'left',
+  padding: '0.5rem 0.75rem',
+  borderRadius: '6px',
+  cursor: 'pointer',
+  fontFamily: 'inherit',
+  width: '100%',
 };
 
 const textLinkStyle = {

@@ -246,4 +246,16 @@ button, input, textarea, select {
   .landing-nav-mobile {
     padding: 0.5rem 1rem !important;
   }
+
+  /* Show hamburger button on mobile */
+  .hamburger-btn {
+    display: flex !important;
+    min-height: 0 !important;
+    min-width: 0 !important;
+  }
+
+  /* Show mobile dropdown menu on mobile */
+  .mobile-menu {
+    display: flex !important;
+  }
 }
