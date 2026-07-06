@@ -681,7 +681,7 @@ function AppInner() {
   const landingBarSpacer = <div style={{ height: 48 }} />;
 
   const landingBar = (
-    <div style={styles.landingAuthBar}>
+    <div style={styles.landingAuthBar} className="landing-nav-mobile">
       <button
         onClick={() => window.location.href = '/'}
         style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
@@ -691,54 +691,62 @@ function AppInner() {
       </button>
       <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
         {user && (
-          <Tooltip text="View your document history">
+          <div className="landing-nav-secondary">
+            <Tooltip text="View your document history">
+              <button
+                onClick={() => setShowHistory(h => !h)}
+                style={{ fontSize: '12px', color: '#64748B', background: 'transparent', border: '1px solid #E2E8F0', borderRadius: '7px', padding: '5px 12px', cursor: 'pointer', fontFamily: 'inherit' }}
+              >
+                📄 History
+              </button>
+            </Tooltip>
+          </div>
+        )}
+        <div className="landing-nav-secondary">
+          <Tooltip text="Take a tour">
             <button
-              onClick={() => setShowHistory(h => !h)}
-              style={{ fontSize: '12px', color: '#64748B', background: 'transparent', border: '1px solid #E2E8F0', borderRadius: '7px', padding: '5px 12px', cursor: 'pointer', fontFamily: 'inherit' }}
+              onClick={handleShowHomeTour}
+              style={{
+                background: 'transparent',
+                border: '1px solid var(--card-border)',
+                borderRadius: '7px',
+                padding: '5px 10px',
+                fontSize: '13px',
+                color: 'var(--text-secondary)',
+                cursor: 'pointer',
+                fontFamily: 'inherit',
+              }}
             >
-              📄 History
+              ?
             </button>
           </Tooltip>
-        )}
-        <Tooltip text="Take a tour">
-          <button
-            onClick={handleShowHomeTour}
-            style={{
-              background: 'transparent',
-              border: '1px solid var(--card-border)',
-              borderRadius: '7px',
-              padding: '5px 10px',
-              fontSize: '13px',
-              color: 'var(--text-secondary)',
-              cursor: 'pointer',
-              fontFamily: 'inherit',
-            }}
-          >
-            ?
-          </button>
-        </Tooltip>
-        <Tooltip text="Command palette">
-          <button
-            onClick={() => setShowCommandPalette(true)}
-            style={{
-              background: 'transparent',
-              border: '1px solid var(--card-border)',
-              borderRadius: '7px',
-              padding: '5px 10px',
-              fontSize: '12px',
-              color: 'var(--text-secondary)',
-              cursor: 'pointer',
-              fontFamily: 'inherit',
-              letterSpacing: '0.03em',
-            }}
-          >
-            ⌘K
-          </button>
-        </Tooltip>
+        </div>
+        <div className="landing-nav-secondary">
+          <Tooltip text="Command palette">
+            <button
+              onClick={() => setShowCommandPalette(true)}
+              style={{
+                background: 'transparent',
+                border: '1px solid var(--card-border)',
+                borderRadius: '7px',
+                padding: '5px 10px',
+                fontSize: '12px',
+                color: 'var(--text-secondary)',
+                cursor: 'pointer',
+                fontFamily: 'inherit',
+                letterSpacing: '0.03em',
+              }}
+            >
+              ⌘K
+            </button>
+          </Tooltip>
+        </div>
         {user ? (
           <>
             {user?.id === '363022d8-cfc1-4e58-ac29-ef9fe6ac287e' && (
-              <button onClick={() => setShowAdminPanel(true)} style={{ fontSize: '12px', color: '#64748B', background: 'transparent', border: '1px solid #E2E8F0', borderRadius: '7px', padding: '5px 12px', cursor: 'pointer', fontFamily: 'inherit' }}>⚙️ Admin</button>
+              <div className="landing-nav-secondary">
+                <button onClick={() => setShowAdminPanel(true)} style={{ fontSize: '12px', color: '#64748B', background: 'transparent', border: '1px solid #E2E8F0', borderRadius: '7px', padding: '5px 12px', cursor: 'pointer', fontFamily: 'inherit' }}>⚙️ Admin</button>
+              </div>
             )}
             <Tooltip text="Buy more credits">
               <button

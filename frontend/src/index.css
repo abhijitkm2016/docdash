@@ -236,4 +236,14 @@ button, input, textarea, select {
     gap: 0.5rem !important;
     padding: 0.5rem 1rem !important;
   }
+
+  /* Landing navbar — hide secondary buttons on mobile */
+  .landing-nav-secondary {
+    display: none !important;
+  }
+
+  /* Landing navbar — reduce padding */
+  .landing-nav-mobile {
+    padding: 0.5rem 1rem !important;
+  }
 }
