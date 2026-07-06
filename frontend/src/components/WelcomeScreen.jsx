@@ -130,7 +130,7 @@ export default function WelcomeScreen({ onSignIn, onContinueAsGuest }) {
         Simple pricing — credits never expire
       </div>
 
-      <div style={{
+      <div className="pricing-grid-mobile" style={{
         display: 'grid',
         gridTemplateColumns: 'repeat(4, 1fr)',
         gap: '8px',

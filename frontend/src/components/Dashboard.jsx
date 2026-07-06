@@ -484,7 +484,7 @@ function DashboardInner({
       style={styles.page}
     >
       {/* ── Topbar ───────────────────────────────────────────── */}
-      <div style={styles.topbar} className="no-print">
+      <div style={styles.topbar} className="no-print topbar-mobile">
         {/* Brand */}
         <button
           onClick={() => window.location.href = '/'}
@@ -499,7 +499,7 @@ function DashboardInner({
         </button>
 
         {/* Controls: secondary icons → primary actions → profile */}
-        <div style={styles.controls}>
+        <div style={styles.controls} className="topbar-controls">
           {/* Secondary icon buttons */}
           <IconButton icon="📂" label="Document history" onClick={onShowHistory} />
           <ThemeToggle asIcon />
@@ -612,7 +612,7 @@ function DashboardInner({
       {/* ── KPI Strip ─────────────────────────────────────────── */}
       <Section title="Key Metrics">
         <ErrorBoundary label="Key Metrics">
-          <div data-tour="kpi-cards" style={styles.kpiGrid}>
+          <div data-tour="kpi-cards" className="kpi-grid-mobile" style={styles.kpiGrid}>
             {(data.kpis || []).slice(0, 5).map((kpi, i) => (
               <motion.div
                 key={i}
@@ -634,7 +634,7 @@ function DashboardInner({
             <DimensionFilters dimensions={dimensions} />
           )}
           <ActiveFilterBar dimensions={dimensions} />
-          <div data-tour="charts" style={styles.chartsGrid}>
+          <div data-tour="charts" className="charts-grid-mobile" style={styles.chartsGrid}>
             {(data.charts || []).map((chart, i) => (
               <motion.div
                 key={chart.id}
@@ -729,7 +729,7 @@ export default function Dashboard(props) {
 
 // ── Styles ────────────────────────────────────────────────────────────────────
 const styles = {
-  page: { maxWidth: 1200, margin: '0 auto', padding: '2rem 1.5rem' },
+  page: { maxWidth: 1200, margin: '0 auto', padding: '2rem 1.5rem', boxSizing: 'border-box' },
 
   topbar: {
     display: 'flex',
@@ -748,6 +748,7 @@ const styles = {
     marginRight: '-1.5rem',
     paddingLeft: '1.5rem',
     paddingRight: '1.5rem',
+    overflowX: 'auto',
   },
   topbarDivider: {
     width: 1,
@@ -945,13 +946,13 @@ const styles = {
 
   kpiGrid: {
     display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
     maxWidth: '100%',
     gap: '12px',
   },
   chartsGrid: {
     display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))',
+    gridTemplateColumns: 'repeat(auto-fill, minmax(min(340px, 100%), 1fr))',
     gap: '1.5rem',
   },
 

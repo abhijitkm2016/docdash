@@ -186,3 +186,54 @@ button, input, textarea, select {
   transition: background-color 0.15s ease, border-color 0.15s ease,
               color 0.15s ease, opacity 0.15s ease, transform 0.15s ease;
 }
+
+/* ── Mobile layout fixes ─────────────────────────────────────────────────── */
+@media (max-width: 640px) {
+
+  /* Dashboard topbar — compress spacing */
+  .topbar-controls {
+    gap: 0.25rem !important;
+  }
+
+  /* Hide text labels in topbar on mobile — icons only */
+  .topbar-label {
+    display: none;
+  }
+
+  /* KPI grid — 2 columns on mobile */
+  .kpi-grid-mobile {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+
+  /* Charts grid — single column on mobile */
+  .charts-grid-mobile {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Mode selector — wrap to 2 rows on very small screens */
+  .mode-selector-mobile {
+    flex-wrap: wrap !important;
+  }
+
+  .mode-selector-mobile button {
+    flex: 1 1 calc(33% - 4px) !important;
+    min-width: 0 !important;
+  }
+
+  /* WelcomeScreen pricing grid — 2 columns on mobile */
+  .pricing-grid-mobile {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+
+  /* Dashboard main content padding */
+  .dashboard-main-mobile {
+    padding: 1rem !important;
+  }
+
+  /* Topbar — allow wrapping on very small screens */
+  .topbar-mobile {
+    flex-wrap: wrap !important;
+    gap: 0.5rem !important;
+    padding: 0.5rem 1rem !important;
+  }
+}

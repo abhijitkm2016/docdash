@@ -324,7 +324,7 @@ export default function FileUpload({ onResult, onError, onWarning, onSampleLoad,
               </p>
               <InfoTooltip text="Auto works for most documents. Finance, HR, Sales and Research modes tune the AI to extract domain-specific metrics." />
             </div>
-            <div style={{
+            <div className="mode-selector-mobile" style={{
               display: 'flex',
               width: '100%',
               background: 'var(--border)',
