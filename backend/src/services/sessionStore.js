@@ -5,8 +5,8 @@
  * never share process memory. An in-memory Map therefore loses sessions the
  * moment a different function invocation handles /api/ask or /api/remix.
  *
- * When UPSTASH_REDIS_REST_URL + UPSTASH_REDIS_REST_TOKEN are set (Vercel
- * env vars), sessions are stored in Upstash Redis with a 1-hour TTL.
+ * When KV_REST_API_URL + KV_REST_API_TOKEN (or the legacy UPSTASH_REDIS_REST_*
+ * pair) are set (Vercel env vars), sessions are stored in Upstash Redis with a 1-hour TTL.
  * Without those vars (local dev), the in-memory Map is used as before.
  */
 
@@ -17,8 +17,8 @@ let _redis = null;
 
 function getRedis() {
   if (_redis) return _redis;
-  const url   = process.env.UPSTASH_REDIS_REST_URL;
-  const token = process.env.UPSTASH_REDIS_REST_TOKEN;
+  const url   = process.env.KV_REST_API_URL   || process.env.UPSTASH_REDIS_REST_URL;
+  const token = process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN;
   if (!url || !token) return null;
   try {
     const { Redis } = require('@upstash/redis');

@@ -1,8 +1,10 @@
 const { Redis } = require('@upstash/redis')
+const { describeError } = require('../utils/errorInfo')
 
+// KV_REST_API_* are set by the Vercel Upstash integration; UPSTASH_REDIS_REST_* is the legacy/local name
 const redis = new Redis({
-  url: process.env.UPSTASH_REDIS_REST_URL,
-  token: process.env.UPSTASH_REDIS_REST_TOKEN
+  url: process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL,
+  token: process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN
 })
 
 function getClientIP(req) {
@@ -35,7 +37,7 @@ async function guestGenerationLimit(req, res, next) {
     next()
   } catch (error) {
     // Redis failure — fail open, never block legitimate users
-    console.error('Rate limit check failed:', error)
+    console.error('Rate limit check failed:', JSON.stringify(describeError(error, 'rate-limit')))
     next()
   }
 }
