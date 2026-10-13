@@ -62,7 +62,7 @@ function TourOverlay({ steps, onComplete }) {
 
   function finish(skip = false) {
     unlockScroll();
-    onComplete(skip ? false : dontShow);
+    onComplete(dontShow);
   }
 
   // ── Positioning ───────────────────────────────────────────────────────────────
@@ -293,8 +293,8 @@ function TourOverlay({ steps, onComplete }) {
               </p>
             )}
 
-            {/* Don't show again — last step only */}
-            {isLast && (
+            {/* Don't show again — every step, honoured by Skip as well as Done */}
+            {(
               <label style={{
                 display: 'flex', alignItems: 'center', gap: 7,
                 marginBottom: 12, cursor: 'pointer', userSelect: 'none',
