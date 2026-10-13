@@ -90,7 +90,7 @@ export function useCredits() {
 
   // paymentMeta: { amountPaise, paymentId, orderId, planName } — only provided for paid purchases
   const addCredits = async (amount, purchaseType, paymentMeta = null) => {
-    if (!user || !credits) return
+    if (!user || !credits) return false
     const { data } = await supabase
       .from('credits')
       .update({
@@ -116,7 +116,9 @@ export function useCredits() {
           description: `${paymentMeta.planName} purchased`
         }).then(() => {})
       }
+      return true
     }
+    return false
   }
 
   const redeemPromoCode = async (code) => {
@@ -126,6 +128,14 @@ export function useCredits() {
       .eq('code', code.toUpperCase().trim())
       .single()
 
+    if (!user) return { success: false, message: 'Please sign in to redeem a code.' }
+    if (!credits) return { success: false, message: 'Your account is still loading — please try again in a moment.' }
+
+    // PGRST116 = no row matched. Anything else is a network/server problem, not a bad code.
+    if (error && error.code !== 'PGRST116') {
+      console.error('Promo lookup failed:', error)
+      return { success: false, message: "Couldn't check that code right now. Please try again." }
+    }
     if (error || !promoCode) return { success: false, message: 'Invalid code' }
 
     if (promoCode.expires_at && new Date(promoCode.expires_at) < new Date()) return {
@@ -149,14 +159,21 @@ export function useCredits() {
       .from('promo_redemptions')
       .insert({ user_id: user.id, code_id: promoCode.id })
 
-    if (redemptionError) return { success: false, message: 'Redemption failed. Try again.' }
+    if (redemptionError) {
+      console.error('Promo redemption insert failed:', redemptionError)
+      return { success: false, message: 'Redemption failed. Try again.' }
+    }
 
-    await supabase
+    const { error: countError } = await supabase
       .from('promo_codes')
       .update({ uses_count: promoCode.uses_count + 1 })
       .eq('id', promoCode.id)
+    if (countError) console.error('Promo use-count update failed:', countError)
 
-    await addCredits(promoCode.credits_granted, 'promo')
+    const granted = await addCredits(promoCode.credits_granted, 'promo')
+    if (!granted) {
+      return { success: false, message: 'Code accepted but credits could not be added. Please contact support with code ' + code.toUpperCase().trim() + '.' }
+    }
 
     // Record promo transaction after addCredits (addCredits skips it since no paymentMeta)
     supabase.from('transactions').insert({
