@@ -43,4 +43,21 @@ async function refundCredits({ requestId, client = getServiceClient() }) {
   return data; // balance after the refund
 }
 
-module.exports = { COST, InsufficientCreditsError, newRequestId, consumeCredits, refundCredits };
+/**
+ * Grant purchased credits, atomically and idempotently (keyed on requestId,
+ * e.g. `payment:<razorpay_payment_id>`). Also writes the purchase transaction.
+ */
+async function grantCredits({ userId, amount, reason, requestId, meta = {}, client = getServiceClient() }) {
+  const { data, error } = await client.rpc('grant_credits', {
+    p_user: userId,
+    p_amount: amount,
+    p_reason: reason,
+    p_request_id: requestId,
+    p_meta: meta,
+  });
+  if (error) throw new Error(`grant_credits failed: ${error.message}`);
+  const row = Array.isArray(data) ? data[0] : data;
+  return { balance: row.balance, alreadyGranted: row.already_granted };
+}
+
+module.exports = { grantCredits, COST, InsufficientCreditsError, newRequestId, consumeCredits, refundCredits };

@@ -46,7 +46,7 @@ const PLANS = [
 ]
 
 export default function PricingModal({ onClose, onSuccess }) {
-  const { addCredits, redeemPromoCode } = useCredits()
+  const { redeemPromoCode } = useCredits()
   const [loading, setLoading] = useState(false)
   const [promoInput, setPromoInput] = useState('')
   const [promoMessage, setPromoMessage] = useState(null)
@@ -93,14 +93,11 @@ export default function PricingModal({ onClose, onSuccess }) {
           })
           const verifyData = await verifyRes.json()
           if (verifyData.success) {
-            await addCredits(verifyData.credits, plan.id, {
-              amountPaise: orderData.amount,
-              paymentId: verifyData.paymentId,
-              orderId: verifyData.orderId,
-              planName: plan.name
-            })
+            // Credits were granted by the server; nothing to write from the browser.
             onSuccess(verifyData.credits, plan.name)
             onClose()
+          } else {
+            alert(verifyData.error || 'Payment verification failed. If you were charged, contact support with your payment ID.')
           }
         },
         modal: {

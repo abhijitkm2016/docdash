@@ -188,3 +188,50 @@ describe('refund_credits', () => {
     expect(r.rows[0].bal).toBeNull()
   })
 })
+
+describe('grant_credits (payments)', () => {
+  const grant = (id, amount, reqId, meta = { planId: 'starter', amountPaise: 19900, paymentId: 'pay_x', orderId: 'order_x' }) =>
+    pool.query('select * from public.grant_credits($1, $2, $3, $4, $5::jsonb)', [id, amount, 'Starter Pack purchased', reqId, JSON.stringify(meta)])
+      .then(r => r.rows[0])
+
+  it('adds credits and writes a purchase transaction', async () => {
+    const id = await createUser()
+    const r = await grant(id, 5, 'payment:' + crypto.randomUUID())
+    expect(r).toEqual({ balance: 10, already_granted: false })
+    const tx = await pool.query("select plan_id, credits_delta, amount_paise, razorpay_payment_id from transactions where user_id=$1 and transaction_type='purchase'", [id])
+    expect(tx.rows).toEqual([{ plan_id: 'starter', credits_delta: 5, amount_paise: 19900, razorpay_payment_id: 'pay_x' }])
+  })
+
+  it('is idempotent: the same payment id never grants twice', async () => {
+    const id = await createUser()
+    const reqId = 'payment:' + crypto.randomUUID()
+    await grant(id, 5, reqId)
+    const again = await grant(id, 5, reqId)
+    expect(again).toEqual({ balance: 10, already_granted: true })
+    expect((await balance(id)).credits_remaining).toBe(10)
+  })
+
+  it('concurrent grants for one payment id add credits once', async () => {
+    const id = await createUser()
+    const reqId = 'payment:' + crypto.randomUUID()
+    await Promise.all(Array.from({ length: 6 }, () => grant(id, 5, reqId)))
+    expect((await balance(id)).credits_remaining).toBe(10)
+  })
+
+  it('rejects zero/negative amounts and a payment id owned by another user', async () => {
+    const a = await createUser()
+    const b = await createUser()
+    await expect(grant(a, 0, 'payment:' + crypto.randomUUID())).rejects.toThrow(/invalid_amount/)
+    await expect(grant(a, -5, 'payment:' + crypto.randomUUID())).rejects.toThrow(/invalid_amount/)
+    const reqId = 'payment:' + crypto.randomUUID()
+    await grant(a, 5, reqId)
+    await expect(grant(b, 5, reqId)).rejects.toThrow(/request_id_conflict/)
+  })
+
+  it('a signed-in user (browser) cannot call it', async () => {
+    const id = await createUser()
+    await expect(asRole('authenticated', id, c =>
+      c.query("select * from public.grant_credits($1, 100, 'free money', $2)", [id, 'payment:' + crypto.randomUUID()])
+    )).rejects.toThrow(/permission denied/i)
+  })
+})

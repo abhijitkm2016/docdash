@@ -28,11 +28,11 @@ export function useCredits() {
 
   useEffect(() => { fetchCredits() }, [fetchCredits])
 
-  // TODO(DD-103 / DD-104): addCredits and redeemPromoCode still write to
-  // `credits` / `transactions` from the browser. They WILL FAIL once the
-  // 20261024000000_server_ledger migration is applied (writes are revoked) and
-  // are replaced by server-side payment grant (DD-103) and promo redemption
-  // (DD-104). Do not apply the migration to production before then.
+  // TODO(DD-104): addCredits (used only by redeemPromoCode below) and
+  // redeemPromoCode still write to `credits` / `transactions` from the browser.
+  // They WILL FAIL once the 20261024000000_server_ledger migration is applied
+  // (writes are revoked) and are replaced by server-side promo redemption
+  // (DD-104). Paid purchases no longer use this: the server grants them (DD-103).
   //
   // paymentMeta: { amountPaise, paymentId, orderId, planName } — only provided for paid purchases
   const addCredits = async (amount, purchaseType, paymentMeta = null) => {
