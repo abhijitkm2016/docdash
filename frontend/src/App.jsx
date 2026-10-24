@@ -62,7 +62,7 @@ function AppInner() {
 
   const { user, signOut, loading: authLoading } = useAuth();
   const { saveDocument, loadDocument, updateDocument, refetch } = useDocuments();
-  const { credits, deductCredit, restoreCredit } = useCredits();
+  const { credits, fetchCredits } = useCredits();
   const { createShare } = useShares();
 
   const [result,            setResult]            = useState(null);
@@ -211,14 +211,8 @@ function AppInner() {
       if (saved) setCurrentDocumentId(saved.id);
     }
 
-    // Deduct credit after successful generation
-    if (user) {
-      const creditsUsed = data.deep ? 5 : 1;
-      await deductCredit(
-        data.deep ? `Deep Analysis — ${fileName || 'document'}` : fileName || 'Document generation',
-        creditsUsed
-      );
-    }
+    // Credits are charged server-side before generation; just refresh the balance.
+    if (user) await fetchCredits();
   }
 
   // Called by FileUpload before processing starts — returns false to abort
@@ -260,8 +254,8 @@ function AppInner() {
 
     setRemixLoading(true);
     setError(null);
-    await deductCredit(description);
 
+    // The server charges (and refunds on failure); we only refresh the balance.
     let success = false;
     try {
       const { data: { session } } = await supabase.auth.getSession();
@@ -278,7 +272,11 @@ function AppInner() {
         setShowAuthModal(true);
         return;
       }
-      if (!res.ok) throw new Error(data.error || 'Remix failed');
+      if (res.status === 402) {
+        setShowPricingModal(true);
+        return;
+      }
+      if (!res.ok) throw new Error(data.message || data.error || 'Remix failed');
       setResult(data);
       setSessionId(data.sessionId || sessionId);
       setRemixVersion(v => v + 1);
@@ -287,7 +285,7 @@ function AppInner() {
     } catch (err) {
       setError(err.message);
     } finally {
-      if (!success) await restoreCredit();
+      await fetchCredits();
       setRemixLoading(false);
     }
   }
@@ -943,6 +941,7 @@ function AppInner() {
             setGuestLimitMessage(msg);
             setShowAuthModal(true);
           }}
+          onInsufficientCredits={() => { setShowPricingModal(true); fetchCredits(); }}
         />
       </div>
 

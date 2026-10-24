@@ -1,0 +1,42 @@
+name: test
+
+on:
+  pull_request:
+
+jobs:
+  unit:
+    name: Unit + route tests (mocks only)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            backend/package-lock.json
+      # api/*.js resolves express/multer from the root; backend/src from backend/
+      - run: npm ci
+      - run: npm ci --prefix backend
+      - run: npm test --prefix backend
+
+  sql:
+    name: Ledger SQL tests (local Supabase)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      - run: npm ci --prefix backend
+      # Local stack only: applies supabase/migrations to a throwaway Docker database.
+      - run: supabase start -x studio,imgproxy,edge-runtime,logflare,vector,mailpit,realtime,storage-api
+      - run: npm run test:sql --prefix backend
+      - if: always()
+        run: supabase stop --no-backup

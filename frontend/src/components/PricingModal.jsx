@@ -1,3 +1,4 @@
+import { getAuthHeaders } from '../lib/authHeaders'
 import { useState } from 'react'
 import { useCredits } from '../hooks/useCredits'
 
@@ -65,7 +66,7 @@ export default function PricingModal({ onClose, onSuccess }) {
     try {
       const orderRes = await fetch('/api/payments/create-order', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...(await getAuthHeaders()) },
         body: JSON.stringify({ planId: plan.id })
       })
       const orderData = await orderRes.json()
@@ -82,7 +83,7 @@ export default function PricingModal({ onClose, onSuccess }) {
         handler: async (response) => {
           const verifyRes = await fetch('/api/payments/verify', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json', ...(await getAuthHeaders()) },
             body: JSON.stringify({
               razorpay_order_id: response.razorpay_order_id,
               razorpay_payment_id: response.razorpay_payment_id,

@@ -1,3 +1,4 @@
+import { getAuthHeaders } from '../lib/authHeaders';
 import { useState, useRef, useEffect } from 'react';
 
 export default function AskYourData({ sessionId, dashboardData }) {
@@ -24,11 +25,12 @@ export default function AskYourData({ sessionId, dashboardData }) {
     try {
       const res = await fetch('/api/ask', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...(await getAuthHeaders()) },
         body: JSON.stringify({ sessionId, question: q, dashboardData: dashboardData || null }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Failed to get answer');
+      if (res.status === 401) throw new Error('Sign in to ask questions about your data.');
+      if (!res.ok) throw new Error(data.message || data.error || 'Failed to get answer');
       setHistory(prev => [...prev, { question: q, answer: data.answer }]);
     } catch (err) {
       setError(err.message);
