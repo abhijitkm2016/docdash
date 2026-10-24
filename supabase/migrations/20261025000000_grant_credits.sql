@@ -59,11 +59,11 @@ begin
 
   insert into transactions (
     user_id, transaction_type, plan_id, credits_delta, amount_paise, currency,
-    razorpay_payment_id, razorpay_order_id, description
+    razorpay_payment_id, razorpay_order_id, promo_code, description
   ) values (
-    p_user, 'purchase', p_meta->>'planId', p_amount,
+    p_user, coalesce(p_meta->>'transactionType', 'purchase'), p_meta->>'planId', p_amount,
     nullif(p_meta->>'amountPaise', '')::integer, 'INR',
-    p_meta->>'paymentId', p_meta->>'orderId',
+    p_meta->>'paymentId', p_meta->>'orderId', p_meta->>'promoCode',
     coalesce(p_reason, 'Credits purchased')
   );
 

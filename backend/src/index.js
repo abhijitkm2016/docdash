@@ -7,7 +7,8 @@ const analyzeRoute  = require('../../api/analyze'); // shared with Vercel functi
 const askRoute      = require('./routes/ask');
 const remixRoute    = require('./routes/remix');
 const paymentsRoute = require('./routes/payments');
-const { guestRemixBlock } = require('./middleware/rateLimit');
+const createPromoRouter = require('./routes/promo');
+const { guestRemixBlock, getRedis } = require('./middleware/rateLimit');
 const { requireUser }     = require('./middleware/requireUser');
 
 const app  = express();
@@ -20,6 +21,7 @@ app.use('/api/analyze',  analyzeRoute);
 app.use('/api/ask',      requireUser, askRoute);
 app.use('/api/remix',    guestRemixBlock, remixRoute);
 app.use('/api/payments', requireUser, paymentsRoute);
+app.use('/api/promo',    requireUser, createPromoRouter({ redis: getRedis }));
 
 app.get('/api/health', (_req, res) => res.json({ status: 'ok' }));
 

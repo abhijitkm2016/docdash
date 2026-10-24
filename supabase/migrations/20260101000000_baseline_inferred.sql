@@ -63,3 +63,45 @@ begin
     create policy "Users can insert own transactions" on public.transactions for insert with check (auth.uid() = user_id);
   end if;
 end $$;
+
+-- Promo tables (inferred from production column list + policies seen on 2026-10-13).
+create table if not exists public.promo_codes (
+  id              uuid primary key default gen_random_uuid(),
+  code            text not null unique,
+  credits_granted integer not null,
+  max_uses        integer not null default 10,
+  uses_count      integer not null default 0,
+  expires_at      timestamptz not null,
+  created_at      timestamptz default now(),
+  note            text
+);
+create table if not exists public.promo_redemptions (
+  id          uuid primary key default gen_random_uuid(),
+  user_id     uuid not null references auth.users(id) on delete cascade,
+  code_id     uuid not null references public.promo_codes(id) on delete cascade,
+  redeemed_at timestamptz default now()
+);
+grant all on public.promo_codes, public.promo_redemptions to anon, authenticated, service_role;
+alter table public.promo_codes       enable row level security;
+alter table public.promo_redemptions enable row level security;
+
+do $$
+begin
+  if not exists (select 1 from pg_policies where schemaname='public' and tablename='promo_codes' and policyname='Anyone can read promo codes') then
+    create policy "Anyone can read promo codes" on public.promo_codes for select using (true);
+  end if;
+  if not exists (select 1 from pg_policies where schemaname='public' and tablename='promo_codes' and policyname='admin_insert_promo_codes') then
+    create policy admin_insert_promo_codes on public.promo_codes for insert to authenticated
+      with check (auth.uid() = '363022d8-cfc1-4e58-ac29-ef9fe6ac287e'::uuid);
+  end if;
+  if not exists (select 1 from pg_policies where schemaname='public' and tablename='promo_codes' and policyname='admin_select_promo_codes') then
+    create policy admin_select_promo_codes on public.promo_codes for select to authenticated
+      using (auth.uid() = '363022d8-cfc1-4e58-ac29-ef9fe6ac287e'::uuid);
+  end if;
+  if not exists (select 1 from pg_policies where schemaname='public' and tablename='promo_redemptions' and policyname='Users can insert own redemptions') then
+    create policy "Users can insert own redemptions" on public.promo_redemptions for insert with check (auth.uid() = user_id);
+  end if;
+  if not exists (select 1 from pg_policies where schemaname='public' and tablename='promo_redemptions' and policyname='Users can view own redemptions') then
+    create policy "Users can view own redemptions" on public.promo_redemptions for select using (auth.uid() = user_id);
+  end if;
+end $$;
