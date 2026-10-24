@@ -192,6 +192,7 @@ app.post('*', guestGenerationLimit, upload.array('files', 10), async (req, res) 
         parsedFile: combinedParsed,
         fileName:   combinedName,
         dashboardData,
+        userId:     req.user?.id ?? null, // sessions belong to their creator
       });
     } catch (sessionErr) {
       console.error('Session save failed (result still delivered):', JSON.stringify(describeError(sessionErr, step)));

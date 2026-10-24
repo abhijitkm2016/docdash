@@ -18,7 +18,9 @@ async function runRemix(req, res, options = {}) {
     console.error('Remix session lookup failed:', err.message);
     return res.status(503).json({ error: 'Your session could not be loaded right now. Please try again.' });
   }
-  if (!session) {
+  // A session created by a signed-in user can only be used by that user.
+  // (404, not 403, so session ids cannot be probed.) Guest sessions have no owner.
+  if (!session || (session.userId && session.userId !== req.user.id)) {
     return res.status(404).json({
       error: 'Session not found or expired. Please re-upload your file.',
     });

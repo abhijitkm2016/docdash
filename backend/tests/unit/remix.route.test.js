@@ -68,4 +68,17 @@ describe('POST /api/remix/*', () => {
     expect(res.status).toBe(503)
     expect(consume).not.toHaveBeenCalled()
   })
+
+  it("another user's session -> 404, no charge, no model call", async () => {
+    sessionGet.mockResolvedValue({ parsedFile: { text: 'x' }, fileName: 'f.csv', userId: 'someone-else' })
+    const res = await request(app).post('/api/remix/auto').send({ sessionId: 's1' })
+    expect(res.status).toBe(404)
+    expect(consume).not.toHaveBeenCalled()
+    expect(analyzeDocument).not.toHaveBeenCalled()
+  })
+
+  it('own session works', async () => {
+    sessionGet.mockResolvedValue({ parsedFile: { text: 'x' }, fileName: 'f.csv', userId: 'u1' })
+    expect((await request(app).post('/api/remix/auto').send({ sessionId: 's1' })).status).toBe(200)
+  })
 })

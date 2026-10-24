@@ -16,7 +16,8 @@ router.post('/', async (req, res) => {
   if (sessionId) {
     try {
       const session = await sessionStore.get(sessionId);
-      if (session) dashboardData = session.dashboardData;
+      // Someone else's session is treated as missing.
+      if (session && (!session.userId || session.userId === req.user.id)) dashboardData = session.dashboardData;
     } catch (err) {
       // Session store down: fall back to the dashboard the client sent, if any.
       console.error('Ask session lookup failed:', err.message);
