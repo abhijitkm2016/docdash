@@ -2,6 +2,7 @@ const express = require('express');
 const { analyzeDocument }     = require('../services/claudeClient');
 const { buildStandaloneHtml } = require('../utils/htmlExporter');
 const sessionStore            = require('../services/sessionStore');
+const ledger                  = require('../services/ledger');
 
 const router = express.Router();
 
@@ -16,6 +17,27 @@ async function runRemix(req, res, options = {}) {
     });
   }
 
+  // Remix is signed-in only (guestRemixBlock sets req.user). Charge atomically
+  // before the model call; refund exactly once if anything after it fails.
+  const requestId = ledger.newRequestId('remix');
+  try {
+    await ledger.consumeCredits({
+      userId:    req.user.id,
+      amount:    ledger.COST.remix,
+      reason:    options.guidedInstruction ? 'Guided Remix' : 'Auto Remix',
+      requestId,
+    });
+  } catch (err) {
+    if (err instanceof ledger.InsufficientCreditsError) {
+      return res.status(402).json({
+        error: 'insufficient_credits',
+        message: 'Not enough credits to remix. Please top up and try again.',
+      });
+    }
+    console.error('Remix charge failed:', err.message);
+    return res.status(500).json({ error: 'Could not charge credits. Please try again.' });
+  }
+
   try {
     const dashboardData = await analyzeDocument(session.parsedFile, session.fileName, {
       remixMode: true,
@@ -26,6 +48,11 @@ async function runRemix(req, res, options = {}) {
     res.json({ dashboardData, standaloneHtml, sessionId });
   } catch (err) {
     console.error('Remix error:', err.message);
+    try {
+      await ledger.refundCredits({ requestId });
+    } catch (refundErr) {
+      console.error('Credit refund failed:', refundErr.message, 'requestId=' + requestId);
+    }
     res.status(500).json({ error: err.message || 'Remix failed' });
   }
 }
@@ -43,3 +70,4 @@ router.post('/guided', (req, res) => {
 });
 
 module.exports = router;
+module.exports.runRemix = runRemix;

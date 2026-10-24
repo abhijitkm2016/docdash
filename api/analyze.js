@@ -25,6 +25,7 @@ const { condenseText }        = require('../backend/src/utils/condenseText');
 const sessionStore            = require('../backend/src/services/sessionStore');
 const { guestGenerationLimit } = require('../backend/src/middleware/rateLimit');
 const { describeError }       = require('../backend/src/utils/errorInfo');
+const ledger                  = require('../backend/src/services/ledger');
 
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -112,6 +113,7 @@ app.post('*', guestGenerationLimit, upload.array('files', 10), async (req, res) 
   let step      = 'parse';
   let streaming = false;
   let heartbeat = null;
+  let chargeId  = null; // set once credits are deducted; cleared once refunded
 
   const send = (event, data) =>
     res.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
@@ -143,6 +145,24 @@ app.post('*', guestGenerationLimit, upload.array('files', 10), async (req, res) 
       text: combinedText,
       type: parsed.length === 1 ? parsed[0].type : 'multi',
     };
+
+    // Signed-in users pay up front, atomically, before any model call. Cost is
+    // decided here on the server — the client's idea of the price is ignored.
+    // req.user is only ever set by verified-token middleware; guests are
+    // limited by the IP limiter instead and are never charged.
+    if (req.user) {
+      step = 'charge';
+      const requestId = ledger.newRequestId('analyze');
+      // Set before the call: if the RPC succeeds but its response is lost, the
+      // catch below still refunds (refund_credits is a no-op for unknown ids).
+      chargeId = requestId;
+      await ledger.consumeCredits({
+        userId:    req.user.id,
+        amount:    deep ? ledger.COST.deep : ledger.COST.standard,
+        reason:    deep ? `Deep Analysis — ${combinedName}` : `Document generation — ${combinedName}`,
+        requestId,
+      });
+    }
 
     // Parsing succeeded — switch to SSE so the connection stays alive while
     // Claude works (Vercel timeout workaround, see header comment).
@@ -183,6 +203,25 @@ app.post('*', guestGenerationLimit, upload.array('files', 10), async (req, res) 
     res.end();
   } catch (err) {
     console.error('Analysis error:', JSON.stringify(describeError(err, step)));
+
+    // Anything that fails after the charge gets the credits back, exactly once.
+    if (chargeId && !(err instanceof ledger.InsufficientCreditsError)) {
+      const id = chargeId;
+      chargeId = null;
+      try {
+        await ledger.refundCredits({ requestId: id });
+      } catch (refundErr) {
+        console.error('Credit refund failed:', JSON.stringify(describeError(refundErr, 'refund')), 'requestId=' + id);
+      }
+    }
+
+    if (err instanceof ledger.InsufficientCreditsError) {
+      return res.status(402).json({
+        error: 'insufficient_credits',
+        message: 'Not enough credits for this analysis. Please top up and try again.',
+        step,
+      });
+    }
 
     const userMessage = userMessageFor(err, step);
     if (streaming) {

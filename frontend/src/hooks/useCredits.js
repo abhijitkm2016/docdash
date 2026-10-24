@@ -17,22 +17,9 @@ export function useCredits() {
       .single()
 
     if (error && error.code === 'PGRST116') {
-      // No credits row yet — seed with 5 free credits
-      const { data: newCredits } = await supabase
-        .from('credits')
-        .insert({ user_id: user.id, credits_remaining: 5, credits_used: 0 })
-        .select()
-        .single()
-      setCredits(newCredits)
-      // Record free tier transaction (fire-and-forget — never block the UI)
-      supabase.from('transactions').insert({
-        user_id: user.id,
-        transaction_type: 'free_tier',
-        plan_id: 'free',
-        credits_delta: 5,
-        currency: 'INR',
-        description: 'Welcome — 5 free credits on signup'
-      }).then(() => {})
+      // No credits row. New accounts are seeded server-side (signup trigger),
+      // so the browser never writes balances; just show no balance.
+      setCredits(null)
     } else {
       setCredits(data)
     }
@@ -41,53 +28,12 @@ export function useCredits() {
 
   useEffect(() => { fetchCredits() }, [fetchCredits])
 
-  const deductCredit = async (description = 'Document generation', amount = 1) => {
-    if (!user || !credits) return false
-    if (credits.credits_remaining <= 0) return false
-    const { data, error } = await supabase
-      .from('credits')
-      .update({
-        credits_remaining: credits.credits_remaining - amount,
-        credits_used: credits.credits_used + amount
-      })
-      .eq('user_id', user.id)
-      .select()
-      .single()
-    if (error) return false
-    setCredits(data)
-    supabase.from('transactions').insert({
-      user_id: user.id,
-      transaction_type: 'deduction',
-      credits_delta: -amount,
-      currency: 'INR',
-      description
-    }).then(() => {})
-    return true
-  }
-
-  const restoreCredit = async () => {
-    if (!user || !credits) return
-    const { data } = await supabase
-      .from('credits')
-      .update({
-        credits_remaining: credits.credits_remaining + 1,
-        credits_used: Math.max(0, credits.credits_used - 1)
-      })
-      .eq('user_id', user.id)
-      .select()
-      .single()
-    if (data) {
-      setCredits(data)
-      supabase.from('transactions').insert({
-        user_id: user.id,
-        transaction_type: 'restoration',
-        credits_delta: 1,
-        currency: 'INR',
-        description: 'Credit restored — generation failed'
-      }).then(() => {})
-    }
-  }
-
+  // TODO(DD-103 / DD-104): addCredits and redeemPromoCode still write to
+  // `credits` / `transactions` from the browser. They WILL FAIL once the
+  // 20261024000000_server_ledger migration is applied (writes are revoked) and
+  // are replaced by server-side payment grant (DD-103) and promo redemption
+  // (DD-104). Do not apply the migration to production before then.
+  //
   // paymentMeta: { amountPaise, paymentId, orderId, planName } — only provided for paid purchases
   const addCredits = async (amount, purchaseType, paymentMeta = null) => {
     if (!user || !credits) return false
@@ -195,8 +141,7 @@ export function useCredits() {
 
   return {
     credits, loading,
-    fetchCredits, deductCredit,
-    restoreCredit, addCredits,
+    fetchCredits, addCredits,
     redeemPromoCode
   }
 }

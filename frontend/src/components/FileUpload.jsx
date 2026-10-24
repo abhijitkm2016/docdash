@@ -66,7 +66,7 @@ function truncateName(name, max = 42) {
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────
-export default function FileUpload({ onResult, onError, onWarning, onSampleLoad, onLoadingChange, onBeforeProcess, onAuthRequired }) {
+export default function FileUpload({ onResult, onError, onWarning, onSampleLoad, onLoadingChange, onBeforeProcess, onAuthRequired, onInsufficientCredits }) {
   const [files,         setFiles]         = useState([]);   // File[]
   const [dragging,      setDragging]      = useState(false);
   const [loading,       setLoading]       = useState(false);
@@ -149,10 +149,17 @@ export default function FileUpload({ onResult, onError, onWarning, onSampleLoad,
         }
       }
 
+      if (res.status === 402) {
+        setLoading(false);
+        onLoadingChange?.(false);
+        onInsufficientCredits?.();
+        return;
+      }
+
       if (!res.ok) {
         const text = await res.text();
         let msg;
-        try { msg = JSON.parse(text).error; } catch { msg = text; }
+        try { const body = JSON.parse(text); msg = body.message || body.error; } catch { msg = text; }
         throw new Error(msg || `Server error ${res.status}`);
       }
 

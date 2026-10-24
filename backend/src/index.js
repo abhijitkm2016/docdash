@@ -8,6 +8,7 @@ const askRoute      = require('./routes/ask');
 const remixRoute    = require('./routes/remix');
 const paymentsRoute = require('./routes/payments');
 const { guestRemixBlock } = require('./middleware/rateLimit');
+const { requireUser }     = require('./middleware/requireUser');
 
 const app  = express();
 const PORT = process.env.PORT || 3001;
@@ -16,9 +17,9 @@ app.use(cors({ origin: process.env.FRONTEND_URL || '*' }));
 app.use(express.json({ limit: '50mb' }));
 
 app.use('/api/analyze',  analyzeRoute);
-app.use('/api/ask',      askRoute);
+app.use('/api/ask',      requireUser, askRoute);
 app.use('/api/remix',    guestRemixBlock, remixRoute);
-app.use('/api/payments', paymentsRoute);
+app.use('/api/payments', requireUser, paymentsRoute);
 
 app.get('/api/health', (_req, res) => res.json({ status: 'ok' }));
 

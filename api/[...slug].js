@@ -30,6 +30,7 @@ const askRoute      = require('../backend/src/routes/ask');
 const remixRoute    = require('../backend/src/routes/remix');
 const paymentsRoute = require('../backend/src/routes/payments');
 const { guestRemixBlock } = require('../backend/src/middleware/rateLimit');
+const { requireUser }     = require('../backend/src/middleware/requireUser');
 
 const app = express();
 
@@ -38,9 +39,9 @@ app.use(express.json({ limit: '50mb' }));
 
 // /api/analyze is handled by api/analyze.js (its own Vercel function with
 // a dedicated maxDuration and SSE streaming config — not this catch-all).
-app.use('/api/ask',      askRoute);
+app.use('/api/ask',      requireUser, askRoute);
 app.use('/api/remix',    guestRemixBlock, remixRoute);
-app.use('/api/payments', paymentsRoute);
+app.use('/api/payments', requireUser, paymentsRoute);
 app.get('/api/health',   (_req, res) => res.json({ status: 'ok' }));
 
 // Tell Vercel: don't pre-parse the body (multer needs raw multipart stream)
