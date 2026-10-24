@@ -10,7 +10,14 @@ async function runRemix(req, res, options = {}) {
   const { sessionId } = req.body;
   if (!sessionId) return res.status(400).json({ error: 'sessionId is required' });
 
-  const session = await sessionStore.get(sessionId);
+  let session;
+  try {
+    session = await sessionStore.get(sessionId);
+  } catch (err) {
+    // Session store (Redis) unreachable: answer instead of crashing the process.
+    console.error('Remix session lookup failed:', err.message);
+    return res.status(503).json({ error: 'Your session could not be loaded right now. Please try again.' });
+  }
   if (!session) {
     return res.status(404).json({
       error: 'Session not found or expired. Please re-upload your file.',

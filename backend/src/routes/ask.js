@@ -14,8 +14,13 @@ router.post('/', async (req, res) => {
   let dashboardData = null;
 
   if (sessionId) {
-    const session = await sessionStore.get(sessionId);
-    if (session) dashboardData = session.dashboardData;
+    try {
+      const session = await sessionStore.get(sessionId);
+      if (session) dashboardData = session.dashboardData;
+    } catch (err) {
+      // Session store down: fall back to the dashboard the client sent, if any.
+      console.error('Ask session lookup failed:', err.message);
+    }
   }
 
   if (!dashboardData && bodyDashboardData) {
