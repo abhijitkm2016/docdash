@@ -1,4 +1,6 @@
 -- Baseline for LOCAL development and CI only.
+-- Column lists, constraints, policies and grants were checked against production
+-- on 2026-10-25 (read-only catalog queries).
 --
 -- The production schema was created by hand in the Supabase dashboard and has
 -- never been captured as a migration. This file recreates just the two tables
@@ -10,12 +12,14 @@
 -- production before relying on this file for anything beyond local testing.
 
 create table if not exists public.credits (
-  user_id            uuid primary key references auth.users(id) on delete cascade,
-  credits_remaining  integer not null default 0,
+  id                 uuid primary key default gen_random_uuid(),
+  user_id            uuid not null unique references auth.users(id) on delete cascade,
+  credits_remaining  integer not null default 5,
   credits_used       integer not null default 0,
   last_purchase_at   timestamptz,
   last_purchase_type text,
-  created_at         timestamptz default now()
+  created_at         timestamptz default now(),
+  updated_at         timestamptz default now()
 );
 
 create table if not exists public.transactions (
@@ -30,7 +34,7 @@ create table if not exists public.transactions (
   razorpay_order_id   text,
   promo_code          text,
   description         text,
-  created_at          timestamptz default now()
+  created_at          timestamptz not null default now()
 );
 
 -- Production tables were created when Supabase granted full table privileges to
@@ -61,5 +65,48 @@ begin
   end if;
   if not exists (select 1 from pg_policies where schemaname='public' and tablename='transactions' and policyname='Users can insert own transactions') then
     create policy "Users can insert own transactions" on public.transactions for insert with check (auth.uid() = user_id);
+  end if;
+end $$;
+
+-- Promo tables (matches production).
+create table if not exists public.promo_codes (
+  id              uuid primary key default gen_random_uuid(),
+  code            text not null unique,
+  credits_granted integer not null,
+  max_uses        integer not null default 10,
+  uses_count      integer not null default 0,
+  expires_at      timestamptz not null,
+  created_at      timestamptz default now(),
+  note            text
+);
+create table if not exists public.promo_redemptions (
+  id          uuid primary key default gen_random_uuid(),
+  user_id     uuid not null references auth.users(id),
+  code_id     uuid not null references public.promo_codes(id),
+  redeemed_at timestamptz default now(),
+  unique (user_id, code_id)
+);
+grant all on public.promo_codes, public.promo_redemptions to anon, authenticated, service_role;
+alter table public.promo_codes       enable row level security;
+alter table public.promo_redemptions enable row level security;
+
+do $$
+begin
+  if not exists (select 1 from pg_policies where schemaname='public' and tablename='promo_codes' and policyname='Anyone can read promo codes') then
+    create policy "Anyone can read promo codes" on public.promo_codes for select using (true);
+  end if;
+  if not exists (select 1 from pg_policies where schemaname='public' and tablename='promo_codes' and policyname='admin_insert_promo_codes') then
+    create policy admin_insert_promo_codes on public.promo_codes for insert to authenticated
+      with check (auth.uid() = '363022d8-cfc1-4e58-ac29-ef9fe6ac287e'::uuid);
+  end if;
+  if not exists (select 1 from pg_policies where schemaname='public' and tablename='promo_codes' and policyname='admin_select_promo_codes') then
+    create policy admin_select_promo_codes on public.promo_codes for select to authenticated
+      using (auth.uid() = '363022d8-cfc1-4e58-ac29-ef9fe6ac287e'::uuid);
+  end if;
+  if not exists (select 1 from pg_policies where schemaname='public' and tablename='promo_redemptions' and policyname='Users can insert own redemptions') then
+    create policy "Users can insert own redemptions" on public.promo_redemptions for insert with check (auth.uid() = user_id);
+  end if;
+  if not exists (select 1 from pg_policies where schemaname='public' and tablename='promo_redemptions' and policyname='Users can view own redemptions') then
+    create policy "Users can view own redemptions" on public.promo_redemptions for select using (auth.uid() = user_id);
   end if;
 end $$;

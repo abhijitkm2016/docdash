@@ -658,6 +658,7 @@ function AppInner() {
             onClose={() => setShowPricingModal(false)}
             onSuccess={(amount, planName) => {
               showToast(`${amount} credits added — ${planName}`, 'success');
+              fetchCredits();
             }}
           />
         )}
@@ -867,6 +868,7 @@ function AppInner() {
             onClose={() => setShowPricingModal(false)}
             onSuccess={(amount, planName) => {
               showToast(`${amount} credits added — ${planName}`, 'success');
+              fetchCredits();
             }}
           />
         )}
@@ -975,6 +977,7 @@ function AppInner() {
           onClose={() => setShowPricingModal(false)}
           onSuccess={(amount, planName) => {
             showToast(`${amount} credits added — ${planName}`, 'success');
+              fetchCredits();
           }}
         />
       )}

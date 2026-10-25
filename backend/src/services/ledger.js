@@ -9,6 +9,22 @@ const { getServiceClient } = require('./supabaseServer');
 
 const COST = { standard: 1, deep: 5, remix: 1 };
 
+const PROMO_ERRORS = {
+  invalid_code:     { status: 404, message: 'Invalid code' },
+  code_expired:     { status: 410, message: 'This code has expired' },
+  code_exhausted:   { status: 409, message: 'This code has been fully redeemed' },
+  already_redeemed: { status: 409, message: "You've already used this code" },
+};
+
+class PromoError extends Error {
+  constructor(code) {
+    super(PROMO_ERRORS[code].message);
+    this.name = 'PromoError';
+    this.code = code;
+    this.status = PROMO_ERRORS[code].status;
+  }
+}
+
 class InsufficientCreditsError extends Error {
   constructor(message = 'Not enough credits.') {
     super(message);
@@ -43,4 +59,33 @@ async function refundCredits({ requestId, client = getServiceClient() }) {
   return data; // balance after the refund
 }
 
-module.exports = { COST, InsufficientCreditsError, newRequestId, consumeCredits, refundCredits };
+/**
+ * Grant purchased credits, atomically and idempotently (keyed on requestId,
+ * e.g. `payment:<razorpay_payment_id>`). Also writes the purchase transaction.
+ */
+async function grantCredits({ userId, amount, reason, requestId, meta = {}, client = getServiceClient() }) {
+  const { data, error } = await client.rpc('grant_credits', {
+    p_user: userId,
+    p_amount: amount,
+    p_reason: reason,
+    p_request_id: requestId,
+    p_meta: meta,
+  });
+  if (error) throw new Error(`grant_credits failed: ${error.message}`);
+  const row = Array.isArray(data) ? data[0] : data;
+  return { balance: row.balance, alreadyGranted: row.already_granted };
+}
+
+/** Redeem a promo code for this user. Throws PromoError for expected failures. */
+async function redeemPromo({ userId, code, client = getServiceClient() }) {
+  const { data, error } = await client.rpc('redeem_promo', { p_user: userId, p_code: code });
+  if (error) {
+    const known = Object.keys(PROMO_ERRORS).find(k => (error.message || '').includes(k));
+    if (known) throw new PromoError(known);
+    throw new Error(`redeem_promo failed: ${error.message}`);
+  }
+  const row = Array.isArray(data) ? data[0] : data;
+  return { creditsGranted: row.credits_granted, balance: row.balance };
+}
+
+module.exports = { redeemPromo, PromoError, grantCredits, COST, InsufficientCreditsError, newRequestId, consumeCredits, refundCredits };

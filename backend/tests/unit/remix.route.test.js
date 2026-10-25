@@ -15,10 +15,8 @@ function stub(rel, exports) {
 const analyzeDocument = vi.fn()
 stub('services/claudeClient.js', { analyzeDocument: (...a) => analyzeDocument(...a) })
 stub('utils/htmlExporter.js', { buildStandaloneHtml: () => '<html/>' })
-stub('services/sessionStore.js', {
-  get: async () => ({ parsedFile: { text: 'x' }, fileName: 'f.csv' }),
-  set: async () => {},
-})
+const sessionGet = vi.fn()
+stub('services/sessionStore.js', { get: (...a) => sessionGet(...a), set: async () => {} })
 
 const ledger = require('../../src/services/ledger')
 const consume = vi.fn()
@@ -34,6 +32,7 @@ app.use((req, _res, next) => { req.user = { id: 'u1' }; next() })
 app.use('/api/remix', remixRouter)
 
 beforeEach(() => {
+  sessionGet.mockReset().mockResolvedValue({ parsedFile: { text: 'x' }, fileName: 'f.csv' })
   consume.mockReset().mockResolvedValue(4)
   refund.mockReset().mockResolvedValue(5)
   analyzeDocument.mockReset().mockResolvedValue({ title: 'T' })
@@ -61,5 +60,25 @@ describe('POST /api/remix/*', () => {
     expect(res.status).toBe(500)
     expect(refund).toHaveBeenCalledTimes(1)
     expect(refund.mock.calls[0][0].requestId).toBe(consume.mock.calls[0][0].requestId)
+  })
+
+  it('session store outage -> 503 JSON, no charge, no crash', async () => {
+    sessionGet.mockRejectedValue(new Error('redis down'))
+    const res = await request(app).post('/api/remix/auto').send({ sessionId: 's1' })
+    expect(res.status).toBe(503)
+    expect(consume).not.toHaveBeenCalled()
+  })
+
+  it("another user's session -> 404, no charge, no model call", async () => {
+    sessionGet.mockResolvedValue({ parsedFile: { text: 'x' }, fileName: 'f.csv', userId: 'someone-else' })
+    const res = await request(app).post('/api/remix/auto').send({ sessionId: 's1' })
+    expect(res.status).toBe(404)
+    expect(consume).not.toHaveBeenCalled()
+    expect(analyzeDocument).not.toHaveBeenCalled()
+  })
+
+  it('own session works', async () => {
+    sessionGet.mockResolvedValue({ parsedFile: { text: 'x' }, fileName: 'f.csv', userId: 'u1' })
+    expect((await request(app).post('/api/remix/auto').send({ sessionId: 's1' })).status).toBe(200)
   })
 })

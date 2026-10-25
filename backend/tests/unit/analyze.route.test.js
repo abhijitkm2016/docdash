@@ -20,7 +20,8 @@ stub('backend/src/services/fileParser.js', { parseFile: (...a) => parseFile(...a
 stub('backend/src/services/claudeClient.js', { analyzeDocument: (...a) => analyzeDocument(...a) })
 stub('backend/src/utils/htmlExporter.js', { buildStandaloneHtml: () => '<html/>' })
 stub('backend/src/utils/condenseText.js', { condenseText: (p) => p.text })
-stub('backend/src/services/sessionStore.js', { set: async () => {}, get: async () => null })
+const sessionSet = vi.fn(async () => {})
+stub('backend/src/services/sessionStore.js', { set: (...a) => sessionSet(...a), get: async () => null })
 // Auth is covered in requireUser.test.js; here a header just names the user.
 stub('backend/src/middleware/rateLimit.js', {
   guestGenerationLimit: (req, _res, next) => {
@@ -48,6 +49,7 @@ function upload(extra = {}) {
 }
 
 beforeEach(() => {
+  sessionSet.mockClear()
   consume.mockReset().mockResolvedValue(4)
   refund.mockReset().mockResolvedValue(5)
   analyzeDocument.mockReset().mockResolvedValue({ title: 'T' })
@@ -104,5 +106,10 @@ describe('POST /api/analyze credits', () => {
     const res = await upload()
     expect(res.status).toBe(200)
     expect(consume).not.toHaveBeenCalled()
+  })
+
+  it('stores the session with its owner so other users cannot use it', async () => {
+    await upload().set('X-Test-User', 'u1')
+    expect(sessionSet.mock.calls[0][1]).toMatchObject({ userId: 'u1' })
   })
 })

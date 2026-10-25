@@ -79,4 +79,4 @@ function createRateLimiters({ redis = getRedis, verify } = {}) {
   return { guestGenerationLimit, guestRemixBlock }
 }
 
-module.exports = { ...createRateLimiters(), createRateLimiters }
+module.exports = { ...createRateLimiters(), createRateLimiters, getRedis }

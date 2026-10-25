@@ -10,8 +10,17 @@ async function runRemix(req, res, options = {}) {
   const { sessionId } = req.body;
   if (!sessionId) return res.status(400).json({ error: 'sessionId is required' });
 
-  const session = await sessionStore.get(sessionId);
-  if (!session) {
+  let session;
+  try {
+    session = await sessionStore.get(sessionId);
+  } catch (err) {
+    // Session store (Redis) unreachable: answer instead of crashing the process.
+    console.error('Remix session lookup failed:', err.message);
+    return res.status(503).json({ error: 'Your session could not be loaded right now. Please try again.' });
+  }
+  // A session created by a signed-in user can only be used by that user.
+  // (404, not 403, so session ids cannot be probed.) Guest sessions have no owner.
+  if (!session || (session.userId && session.userId !== req.user.id)) {
     return res.status(404).json({
       error: 'Session not found or expired. Please re-upload your file.',
     });

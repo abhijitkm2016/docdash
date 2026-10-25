@@ -29,7 +29,8 @@ const cors    = require('cors');
 const askRoute      = require('../backend/src/routes/ask');
 const remixRoute    = require('../backend/src/routes/remix');
 const paymentsRoute = require('../backend/src/routes/payments');
-const { guestRemixBlock } = require('../backend/src/middleware/rateLimit');
+const createPromoRouter = require('../backend/src/routes/promo');
+const { guestRemixBlock, getRedis } = require('../backend/src/middleware/rateLimit');
 const { requireUser }     = require('../backend/src/middleware/requireUser');
 
 const app = express();
@@ -42,6 +43,7 @@ app.use(express.json({ limit: '50mb' }));
 app.use('/api/ask',      requireUser, askRoute);
 app.use('/api/remix',    guestRemixBlock, remixRoute);
 app.use('/api/payments', requireUser, paymentsRoute);
+app.use('/api/promo',    requireUser, createPromoRouter({ redis: getRedis }));
 app.get('/api/health',   (_req, res) => res.json({ status: 'ok' }));
 
 // Tell Vercel: don't pre-parse the body (multer needs raw multipart stream)
