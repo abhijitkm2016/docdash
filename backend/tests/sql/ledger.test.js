@@ -51,7 +51,12 @@ const consume = (id, amount, reqId) =>
 beforeAll(async () => { await pool.query('select 1') })
 
 afterAll(async () => {
-  if (createdCodes.length) await pool.query('delete from public.promo_codes where id = any($1)', [createdCodes])
+  // Production's promo FKs do not cascade, so remove redemptions before codes/users.
+  if (createdUsers.length) await pool.query('delete from public.promo_redemptions where user_id = any($1)', [createdUsers])
+  if (createdCodes.length) {
+    await pool.query('delete from public.promo_redemptions where code_id = any($1)', [createdCodes])
+    await pool.query('delete from public.promo_codes where id = any($1)', [createdCodes])
+  }
   if (createdUsers.length) {
     await pool.query('delete from public.credit_events where user_id = any($1)', [createdUsers])
     await pool.query('delete from auth.users where id = any($1)', [createdUsers])
@@ -85,6 +90,13 @@ describe('browser (authenticated) cannot write balances', () => {
     await expect(asRole('authenticated', id, c =>
       c.query("insert into transactions (user_id, transaction_type, credits_delta) values ($1, 'purchase', 100)", [id])
     )).rejects.toThrow(/permission denied/i)
+  })
+
+  it('cannot truncate the money tables', async () => {
+    const id = await createUser()
+    for (const t of ['credits', 'transactions', 'promo_codes', 'promo_redemptions']) {
+      await expect(asRole('authenticated', id, c => c.query(`truncate public.${t}`))).rejects.toThrow(/permission denied/i)
+    }
   })
 
   it('can still read only their own credits row', async () => {

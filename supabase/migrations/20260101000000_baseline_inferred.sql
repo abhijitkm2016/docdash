@@ -1,4 +1,6 @@
 -- Baseline for LOCAL development and CI only.
+-- Column lists, constraints, policies and grants were checked against production
+-- on 2026-10-25 (read-only catalog queries).
 --
 -- The production schema was created by hand in the Supabase dashboard and has
 -- never been captured as a migration. This file recreates just the two tables
@@ -10,12 +12,14 @@
 -- production before relying on this file for anything beyond local testing.
 
 create table if not exists public.credits (
-  user_id            uuid primary key references auth.users(id) on delete cascade,
-  credits_remaining  integer not null default 0,
+  id                 uuid primary key default gen_random_uuid(),
+  user_id            uuid not null unique references auth.users(id) on delete cascade,
+  credits_remaining  integer not null default 5,
   credits_used       integer not null default 0,
   last_purchase_at   timestamptz,
   last_purchase_type text,
-  created_at         timestamptz default now()
+  created_at         timestamptz default now(),
+  updated_at         timestamptz default now()
 );
 
 create table if not exists public.transactions (
@@ -30,7 +34,7 @@ create table if not exists public.transactions (
   razorpay_order_id   text,
   promo_code          text,
   description         text,
-  created_at          timestamptz default now()
+  created_at          timestamptz not null default now()
 );
 
 -- Production tables were created when Supabase granted full table privileges to
@@ -64,7 +68,7 @@ begin
   end if;
 end $$;
 
--- Promo tables (inferred from production column list + policies seen on 2026-10-13).
+-- Promo tables (matches production).
 create table if not exists public.promo_codes (
   id              uuid primary key default gen_random_uuid(),
   code            text not null unique,
@@ -77,9 +81,10 @@ create table if not exists public.promo_codes (
 );
 create table if not exists public.promo_redemptions (
   id          uuid primary key default gen_random_uuid(),
-  user_id     uuid not null references auth.users(id) on delete cascade,
-  code_id     uuid not null references public.promo_codes(id) on delete cascade,
-  redeemed_at timestamptz default now()
+  user_id     uuid not null references auth.users(id),
+  code_id     uuid not null references public.promo_codes(id),
+  redeemed_at timestamptz default now(),
+  unique (user_id, code_id)
 );
 grant all on public.promo_codes, public.promo_redemptions to anon, authenticated, service_role;
 alter table public.promo_codes       enable row level security;
